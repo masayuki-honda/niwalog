@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAppStore } from '@/stores/app-store';
 import { initializeSpreadsheet } from '@/services/sheets-api';
 import { ensureAppFolder } from '@/services/drive-api';
+import { withAuthRetry } from '@/utils/auth-retry';
 import { Save, Loader2, ExternalLink, RefreshCw, Share2 } from 'lucide-react';
 
 export function Settings() {
@@ -71,7 +72,7 @@ export function Settings() {
     }
     setInitializing(true);
     try {
-      await initializeSpreadsheet(localSheetId, user.accessToken);
+      await withAuthRetry((token) => initializeSpreadsheet(localSheetId, token));
       setSpreadsheetId(localSheetId);
       alert('スプレッドシートの初期化が完了しました');
     } catch (err) {
@@ -85,7 +86,7 @@ export function Settings() {
     if (!user) return;
     setCreatingFolder(true);
     try {
-      const folderId = await ensureAppFolder(user.accessToken);
+      const folderId = await withAuthRetry((token) => ensureAppFolder(token));
       setLocalFolderId(folderId);
       setDriveFolderId(folderId);
       alert(`フォルダが作成されました: ${folderId}`);
@@ -159,7 +160,7 @@ export function Settings() {
       <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
         <h2 className="font-bold text-sm">Google Drive フォルダ ID</h2>
         <p className="text-xs text-gray-500">
-          写真の保存先フォルダです。自動作成も可能です。
+          写真の保存先ルートフォルダです。プランター別のサブフォルダは写真アップロード時に自動作成されます。
         </p>
         <input
           type="text"

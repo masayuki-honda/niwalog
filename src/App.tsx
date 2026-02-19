@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from '@/stores/app-store';
-import { loadGapiClient, verifyAccessToken, setGapiAccessToken } from '@/services/google-auth';
+import { loadGapiClient, loadGisClient, verifyAccessToken, setGapiAccessToken, refreshAccessToken } from '@/services/google-auth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Login } from '@/pages/Login';
 import { Dashboard } from '@/pages/Dashboard';
@@ -58,19 +58,29 @@ function useRestoreSession() {
       }
 
       try {
+        // GAPI クライアントと GIS を初期化（トークンリフレッシュに必要）
+        await loadGapiClient();
+        await loadGisClient(googleClientId);
+
         // 保存済みトークンが有効か検証（ポップアップなし）
         const isValid = await verifyAccessToken(user.accessToken);
-        if (!isValid) {
-          // トークン期限切れ → ログアウト状態に戻す
-          if (!cancelled) setUser(null);
-          return;
-        }
 
-        // GAPI クライアントを初期化してトークンをセット
-        await loadGapiClient();
-        setGapiAccessToken(user.accessToken);
+        if (isValid) {
+          // トークン有効 → そのままセット
+          setGapiAccessToken(user.accessToken);
+        } else {
+          // トークン期限切れ → サイレントリフレッシュを試行
+          try {
+            const newToken = await refreshAccessToken();
+            setGapiAccessToken(newToken);
+            if (!cancelled) setUser({ ...user, accessToken: newToken });
+          } catch {
+            // リフレッシュ失敗 → ログアウト状態に戻す
+            if (!cancelled) setUser(null);
+          }
+        }
       } catch {
-        // 検証に失敗 → ログアウト状態に戻す
+        // 初期化に失敗 → ログアウト状態に戻す
         if (!cancelled) setUser(null);
       } finally {
         if (!cancelled) setIsInitializing(false);

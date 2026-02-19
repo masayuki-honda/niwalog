@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, Plus, Archive, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, Archive, RotateCcw, Loader2 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
-import { updateRow, clearRow, findRowIndex } from '@/services/sheets-api';
+import { updateRow, deleteRow, findRowIndex } from '@/services/sheets-api';
+import { deleteFile } from '@/services/drive-api';
+import { withAuthRetry } from '@/utils/auth-retry';
+import { DriveImageGallery } from '@/components/DriveImage';
 import { SHEET_NAMES, ACTIVITY_TYPE_CONFIG } from '@/constants';
 import { formatDate, cn, nowISO, daysSince } from '@/utils';
 import type { Planter, ActivityLog } from '@/types';
@@ -10,7 +13,7 @@ import type { Planter, ActivityLog } from '@/types';
 export function PlanterDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, spreadsheetId, planters, activities, setPlanters, setError } =
+  const { user, spreadsheetId, planters, activities, setPlanters, removeActivity, setError } =
     useAppStore();
   const [tab, setTab] = useState<'timeline' | 'info'>('timeline');
   const [deleting, setDeleting] = useState(false);
@@ -40,11 +43,13 @@ export function PlanterDetail() {
   const handleArchiveToggle = async () => {
     if (!user || !spreadsheetId) return;
     try {
-      const rowIndex = await findRowIndex(
-        spreadsheetId,
-        SHEET_NAMES.PLANTERS,
-        planter.id,
-        user.accessToken,
+      const rowIndex = await withAuthRetry((token) =>
+        findRowIndex(
+          spreadsheetId,
+          SHEET_NAMES.PLANTERS,
+          planter.id,
+          token,
+        ),
       );
       if (rowIndex < 0) return;
 
@@ -74,12 +79,14 @@ export function PlanterDetail() {
         updatedPlanter.updatedAt,
       ];
 
-      await updateRow(
-        spreadsheetId,
-        SHEET_NAMES.PLANTERS,
-        rowIndex,
-        row,
-        user.accessToken,
+      await withAuthRetry((token) =>
+        updateRow(
+          spreadsheetId,
+          SHEET_NAMES.PLANTERS,
+          rowIndex,
+          row,
+          token,
+        ),
       );
       setPlanters(planters.map((p) => (p.id === id ? updatedPlanter : p)));
     } catch (err) {
@@ -93,18 +100,22 @@ export function PlanterDetail() {
 
     setDeleting(true);
     try {
-      const rowIndex = await findRowIndex(
-        spreadsheetId,
-        SHEET_NAMES.PLANTERS,
-        planter.id,
-        user.accessToken,
-      );
-      if (rowIndex >= 0) {
-        await clearRow(
+      const rowIndex = await withAuthRetry((token) =>
+        findRowIndex(
           spreadsheetId,
           SHEET_NAMES.PLANTERS,
-          rowIndex,
-          user.accessToken,
+          planter.id,
+          token,
+        ),
+      );
+      if (rowIndex >= 0) {
+        await withAuthRetry((token) =>
+          deleteRow(
+            spreadsheetId,
+            SHEET_NAMES.PLANTERS,
+            rowIndex,
+            token,
+          ),
         );
       }
       setPlanters(planters.filter((p) => p.id !== id));
@@ -212,7 +223,12 @@ export function PlanterDetail() {
 
       {/* Tab content */}
       {tab === 'timeline' ? (
-        <Timeline activities={planterActivities} />
+        <Timeline
+          activities={planterActivities}
+          spreadsheetId={spreadsheetId}
+          onDelete={removeActivity}
+          onError={setError}
+        />
       ) : (
         <PlanterInfo planter={planter} />
       )}
@@ -220,7 +236,53 @@ export function PlanterDetail() {
   );
 }
 
-function Timeline({ activities }: { activities: ActivityLog[] }) {
+function Timeline({
+  activities,
+  spreadsheetId,
+  onDelete,
+  onError,
+}: {
+  activities: ActivityLog[];
+  spreadsheetId: string;
+  onDelete: (id: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (activity: ActivityLog) => {
+    if (!confirm('このアクティビティを削除しますか？写真も削除されます。')) return;
+
+    setDeletingId(activity.id);
+    try {
+      // 1. スプレッドシートから行を削除
+      const rowIndex = await withAuthRetry((token) =>
+        findRowIndex(spreadsheetId, SHEET_NAMES.ACTIVITY_LOGS, activity.id, token),
+      );
+      await withAuthRetry((token) =>
+        deleteRow(spreadsheetId, SHEET_NAMES.ACTIVITY_LOGS, rowIndex, token),
+      );
+
+      // 2. Drive から写真を削除
+      if (activity.photoFileIds && activity.photoFileIds.length > 0) {
+        for (const fileId of activity.photoFileIds) {
+          try {
+            await withAuthRetry((token) => deleteFile(fileId, token));
+          } catch {
+            // 写真削除に失敗しても続行（既に削除済みの場合等）
+            console.warn(`Failed to delete photo: ${fileId}`);
+          }
+        }
+      }
+
+      // 3. ストアから削除
+      onDelete(activity.id);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : '削除に失敗しました');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (activities.length === 0) {
     return (
       <div className="text-center py-8 text-gray-400 text-sm">
@@ -235,8 +297,9 @@ function Timeline({ activities }: { activities: ActivityLog[] }) {
       <div className="space-y-4">
         {activities.map((activity) => {
           const config = ACTIVITY_TYPE_CONFIG[activity.activityType];
+          const isDeleting = deletingId === activity.id;
           return (
-            <div key={activity.id} className="relative pl-10">
+            <div key={activity.id} className={cn('relative pl-10', isDeleting && 'opacity-50')}>
               <div
                 className={cn(
                   'absolute left-2.5 w-3 h-3 rounded-full border-2 border-white dark:border-gray-900',
@@ -249,7 +312,21 @@ function Timeline({ activities }: { activities: ActivityLog[] }) {
                   <span>
                     {config?.emoji} {config?.label || activity.activityType}
                   </span>
-                  <span>{formatDate(activity.activityDate)}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{formatDate(activity.activityDate)}</span>
+                    <button
+                      onClick={() => handleDelete(activity)}
+                      disabled={isDeleting}
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                      title="削除"
+                    >
+                      {isDeleting ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={14} />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 {activity.memo && (
                   <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
@@ -261,6 +338,9 @@ function Timeline({ activities }: { activities: ActivityLog[] }) {
                     🎯 収穫量: {activity.quantity}
                     {activity.unit || '個'}
                   </p>
+                )}
+                {activity.photoFileIds && activity.photoFileIds.length > 0 && (
+                  <DriveImageGallery fileIds={activity.photoFileIds} />
                 )}
               </div>
             </div>
