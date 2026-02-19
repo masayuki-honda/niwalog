@@ -4,39 +4,54 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export function Login() {
-  const { googleClientId, setGoogleClientId, setUser, setError } = useAppStore();
+  const {
+    googleClientId, setGoogleClientId,
+    spreadsheetId, setSpreadsheetId,
+    driveFolderId, setDriveFolderId,
+    setUser, setError,
+  } = useAppStore();
   const user = useAppStore((s) => s.user);
   const error = useAppStore((s) => s.error);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // URL パラメータの clientId を優先し、なければストアの値を使う
+  // URL パラメータを優先し、なければストアの値を使う
   const urlClientId = searchParams.get('clientId') ?? '';
+  const urlSheetId = searchParams.get('sheetId') ?? '';
+  const urlFolderId = searchParams.get('folderId') ?? '';
   const initialClientId = urlClientId || googleClientId;
   const [clientIdInput, setClientIdInput] = useState(initialClientId);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // URL パラメータで clientId が渡された場合はストアにも保存
+  // URL パラメータで設定値が渡された場合はストアにも保存
   useEffect(() => {
     if (urlClientId && urlClientId !== googleClientId) {
       setGoogleClientId(urlClientId);
       setClientIdInput(urlClientId);
     }
-  }, [urlClientId, googleClientId, setGoogleClientId]);
+    if (urlSheetId && urlSheetId !== spreadsheetId) {
+      setSpreadsheetId(urlSheetId);
+    }
+    if (urlFolderId && urlFolderId !== driveFolderId) {
+      setDriveFolderId(urlFolderId);
+    }
+  }, [urlClientId, urlSheetId, urlFolderId, googleClientId, spreadsheetId, driveFolderId, setGoogleClientId, setSpreadsheetId, setDriveFolderId]);
 
   // 家族共有用: URLパラメータに clientId が含まれているか
   const isSharedLink = !!urlClientId;
 
-  // 共有リンクを生成
+  // 共有リンクを生成（全設定を含む）
   const shareUrl = useMemo(() => {
     if (!clientIdInput.trim()) return '';
     const base = `${window.location.origin}${import.meta.env.BASE_URL}`;
     const url = new URL(base);
     url.pathname = url.pathname.replace(/\/$/, '') + '/login';
     url.searchParams.set('clientId', clientIdInput.trim());
+    if (spreadsheetId) url.searchParams.set('sheetId', spreadsheetId);
+    if (driveFolderId) url.searchParams.set('folderId', driveFolderId);
     return url.toString();
-  }, [clientIdInput]);
+  }, [clientIdInput, spreadsheetId, driveFolderId]);
 
   const handleCopyShareLink = async () => {
     if (!shareUrl) return;
@@ -109,7 +124,7 @@ export function Login() {
           {isSharedLink ? (
             <div className="p-3 bg-garden-50 dark:bg-garden-900/20 border border-garden-200 dark:border-garden-800 rounded-lg">
               <p className="text-sm text-garden-700 dark:text-garden-400">
-                🔗 共有リンクから開きました。下のボタンでログインしてください。
+                🔗 共有リンクから開きました。設定は自動で反映されます。下のボタンでログインしてください。
               </p>
             </div>
           ) : (
@@ -180,7 +195,7 @@ export function Login() {
               📤 家族にこのアプリを共有
             </p>
             <p className="text-xs text-blue-600 dark:text-blue-400/80">
-              以下のリンクを LINE 等で送ると、Client ID の入力なしでログインできます。
+              以下のリンクを LINE 等で送ると、全設定が自動反映された状態でログインできます。
             </p>
             <button
               onClick={handleCopyShareLink}

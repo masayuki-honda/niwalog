@@ -26,15 +26,17 @@ export function Settings() {
   const [saved, setSaved] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
-  // 家族共有用ログインリンク
+  // 家族共有用ログインリンク（全設定を含む）
   const shareUrl = useMemo(() => {
     if (!localClientId.trim()) return '';
     const base = `${window.location.origin}${import.meta.env.BASE_URL}`;
     const url = new URL(base);
     url.pathname = url.pathname.replace(/\/$/, '') + '/login';
     url.searchParams.set('clientId', localClientId.trim());
+    if (localSheetId) url.searchParams.set('sheetId', localSheetId);
+    if (localFolderId) url.searchParams.set('folderId', localFolderId);
     return url.toString();
-  }, [localClientId]);
+  }, [localClientId, localSheetId, localFolderId]);
 
   const handleCopyShareLink = async () => {
     if (!shareUrl) return;
@@ -185,7 +187,7 @@ export function Settings() {
         <section className="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-800 p-4 space-y-3">
           <h2 className="font-bold text-sm">📤 家族にアプリを共有</h2>
           <p className="text-xs text-gray-500">
-            以下のリンクを LINE 等で家族に送ると、Client ID の入力なしでログインできます。
+            以下のリンクを LINE 等で家族に送ると、全設定が反映された状態でログインできます。
             事前に GCP のテストユーザーに家族の Gmail を追加してください。
           </p>
           <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs font-mono break-all text-gray-600 dark:text-gray-300">

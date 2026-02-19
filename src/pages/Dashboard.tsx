@@ -1,77 +1,11 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PlusCircle, Droplets, Scissors, Sprout } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
-import { getPlanters, getActivities } from '@/services/sheets-api';
 import { ACTIVITY_TYPE_CONFIG } from '@/constants';
 import { formatDate, daysSince } from '@/utils';
-import type { Planter, ActivityLog } from '@/types';
 
 export function Dashboard() {
-  const { user, spreadsheetId, setPlanters, setActivities, setError, planters, activities } =
-    useAppStore();
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (user && spreadsheetId) {
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, spreadsheetId]);
-
-  const loadData = async () => {
-    if (!user || !spreadsheetId) return;
-    setIsLoading(true);
-    try {
-      const [planterRows, activityRows] = await Promise.all([
-        getPlanters(spreadsheetId, user.accessToken),
-        getActivities(spreadsheetId, user.accessToken),
-      ]);
-
-      const planterList: Planter[] = planterRows.map((row) => ({
-        id: row[0],
-        name: row[1],
-        cropName: row[2],
-        cropVariety: row[3] ?? '',
-        location: row[4] ?? '',
-        startDate: row[5] ?? '',
-        endDate: row[6] ?? '',
-        status: (row[7] as 'active' | 'archived') ?? 'active',
-        imageFolderId: row[8] ?? '',
-        memo: row[9] ?? '',
-        createdAt: row[10] ?? '',
-        updatedAt: row[11] ?? '',
-      }));
-
-      const activityList: ActivityLog[] = activityRows
-        .map((row) => ({
-          id: row[0],
-          planterId: row[1],
-          userName: row[2] ?? '',
-          activityType: (row[3] as ActivityLog['activityType']) ?? 'other',
-          activityDate: row[4] ?? '',
-          memo: row[5] ?? '',
-          quantity: row[6] ? Number(row[6]) : null,
-          unit: row[7] ?? '',
-          photoFileIds: row[8] ? row[8].split(',').filter(Boolean) : [],
-          createdAt: row[9] ?? '',
-        }))
-        .sort(
-          (a, b) =>
-            new Date(b.activityDate).getTime() -
-            new Date(a.activityDate).getTime(),
-        );
-
-      setPlanters(planterList);
-      setActivities(activityList);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'データの読み込みに失敗しました',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { planters, activities, spreadsheetId } = useAppStore();
 
   const activePlanters = planters.filter((p) => p.status === 'active');
   const recentActivities = activities.slice(0, 5);
@@ -155,10 +89,6 @@ export function Dashboard() {
           <PlusCircle size={16} /> その他
         </Link>
       </div>
-
-      {isLoading && (
-        <div className="text-center py-8 text-gray-500">読み込み中...</div>
-      )}
 
       {/* Recent Activities */}
       <section>

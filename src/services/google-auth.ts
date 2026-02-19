@@ -117,6 +117,28 @@ export function requestAccessToken(): Promise<google.accounts.oauth2.TokenRespon
 }
 
 /**
+ * Set the access token on the GAPI client (for restoring sessions)
+ */
+export function setGapiAccessToken(accessToken: string): void {
+  gapi.client.setToken({ access_token: accessToken });
+}
+
+/**
+ * Verify if an access token is still valid by calling the tokeninfo endpoint.
+ * Returns true if valid, false if expired or invalid.
+ */
+export async function verifyAccessToken(accessToken: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${encodeURIComponent(accessToken)}`,
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Revoke the current access token
  */
 export function revokeAccessToken(token: string): void {
