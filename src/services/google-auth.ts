@@ -139,6 +139,16 @@ export async function verifyAccessToken(accessToken: string): Promise<boolean> {
 }
 
 /**
+ * Silently refresh the access token using GIS.
+ * Requires GIS to be already initialized (loadGisClient called).
+ * Returns the new access token string.
+ */
+export async function refreshAccessToken(): Promise<string> {
+  const response = await requestAccessToken();
+  return response.access_token;
+}
+
+/**
  * Revoke the current access token
  */
 export function revokeAccessToken(token: string): void {

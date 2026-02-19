@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Filter } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { addPlanter as addPlanterToSheet } from '@/services/sheets-api';
+import { withAuthRetry } from '@/utils/auth-retry';
 import { generateId, nowISO, cn, daysSince } from '@/utils';
 import type { Planter } from '@/types';
 
@@ -64,7 +65,7 @@ export function PlanterList() {
         planter.updatedAt,
       ];
 
-      await addPlanterToSheet(spreadsheetId, row, user.accessToken);
+      await withAuthRetry((token) => addPlanterToSheet(spreadsheetId, row, token));
       addPlanter(planter);
 
       // Reset form

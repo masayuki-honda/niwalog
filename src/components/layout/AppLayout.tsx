@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
 import { useAppStore } from '@/stores/app-store';
 import { getPlanters, getActivities } from '@/services/sheets-api';
+import { withAuthRetry } from '@/utils/auth-retry';
 import type { Planter, ActivityLog } from '@/types';
 
 /**
@@ -27,10 +28,12 @@ function useLoadAppData() {
     async function load() {
       setIsLoading(true);
       try {
-        const [planterRows, activityRows] = await Promise.all([
-          getPlanters(spreadsheetId, user!.accessToken),
-          getActivities(spreadsheetId, user!.accessToken),
-        ]);
+        const [planterRows, activityRows] = await withAuthRetry((token) =>
+          Promise.all([
+            getPlanters(spreadsheetId, token),
+            getActivities(spreadsheetId, token),
+          ]),
+        );
 
         if (cancelled) return;
 

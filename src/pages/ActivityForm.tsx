@@ -5,6 +5,7 @@ import { useAppStore } from '@/stores/app-store';
 import { addActivity as addActivityToSheet } from '@/services/sheets-api';
 import { ensureAppFolder, ensurePlanterFolder, uploadFile } from '@/services/drive-api';
 import { compressImage } from '@/utils/image-compressor';
+import { withAuthRetry } from '@/utils/auth-retry';
 import { ACTIVITY_TYPE_CONFIG, IMAGE_SETTINGS } from '@/constants';
 import { generateId, nowISO, cn, joinPhotoIds } from '@/utils';
 import type { ActivityLog, ActivityType } from '@/types';
@@ -70,28 +71,27 @@ export function ActivityForm() {
       if (photos.length > 0) {
         setUploadingPhotos(true);
 
-        // Ensure Drive folder
+        // Ensure Drive folder (with auth retry)
         let folderId = driveFolderId;
         if (!folderId) {
-          folderId = await ensureAppFolder(user.accessToken);
+          folderId = await withAuthRetry((token) => ensureAppFolder(token));
           setDriveFolderId(folderId);
         }
 
-        // Ensure planter subfolder
+        // Ensure planter subfolder (with auth retry)
         const planterFolderId = planterId
-          ? await ensurePlanterFolder(planterId, folderId, user.accessToken)
+          ? await withAuthRetry((token) =>
+              ensurePlanterFolder(planterId, folderId, token),
+            )
           : folderId;
 
-        // Compress and upload
+        // Compress and upload (with auth retry)
         for (const photo of photos) {
           const compressed = await compressImage(photo);
           const timestamp = Date.now();
           const fileName = `${activityDate}_${activityType}_${timestamp}.jpg`;
-          const result = await uploadFile(
-            compressed,
-            fileName,
-            planterFolderId,
-            user.accessToken,
+          const result = await withAuthRetry((token) =>
+            uploadFile(compressed, fileName, planterFolderId, token),
           );
           const fileId = result.id;
           photoIds.push(fileId);
@@ -127,7 +127,9 @@ export function ActivityForm() {
         activity.createdAt,
       ];
 
-      await addActivityToSheet(spreadsheetId, row, user.accessToken);
+      await withAuthRetry((token) =>
+        addActivityToSheet(spreadsheetId, row, token),
+      );
       addActivityToStore(activity);
 
       // Cleanup preview URLs

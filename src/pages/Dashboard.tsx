@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { PlusCircle, Droplets, Scissors, Sprout } from 'lucide-react';
+import { PlusCircle, Droplets, Scissors, Sprout, ImageIcon } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { ACTIVITY_TYPE_CONFIG } from '@/constants';
 import { formatDate, daysSince } from '@/utils';
@@ -136,6 +136,11 @@ export function Dashboard() {
                     <div className="text-xs text-gray-500 truncate">
                       {planter?.cropName ?? '不明'}{' '}
                       {activity.memo && `- ${activity.memo}`}
+                      {activity.photoFileIds?.length > 0 && (
+                        <span className="inline-flex items-center gap-0.5 ml-1 text-gray-400">
+                          <ImageIcon size={10} /> {activity.photoFileIds.length}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <span className="text-xs text-gray-400 whitespace-nowrap">

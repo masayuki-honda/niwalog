@@ -78,18 +78,44 @@ export async function updateRow(
 }
 
 /**
- * Delete a row by clearing it (Sheets API doesn't support direct row delete via REST easily)
- * We clear the row and it will appear empty
+ * Delete a row by physically removing it from the sheet.
+ * Uses batchUpdate → deleteDimension to avoid leaving empty rows.
  */
-export async function clearRow(
+export async function deleteRow(
   spreadsheetId: string,
   sheetName: string,
-  rowIndex: number,
+  rowIndex: number, // 1-based (1 = header, 2 = first data row)
   accessToken: string,
 ): Promise<void> {
-  const range = `${sheetName}!A${rowIndex}:Z${rowIndex}`;
-  const url = `${SHEETS_API_BASE}/${spreadsheetId}/values/${encodeURIComponent(range)}:clear`;
-  await fetchSheets(url, accessToken, { method: 'POST' });
+  // 1. Get the numeric sheetId for the given sheet name
+  const metaUrl = `${SHEETS_API_BASE}/${spreadsheetId}?fields=sheets.properties`;
+  const metaRes = await fetchSheets(metaUrl, accessToken);
+  const metaData = await metaRes.json();
+  const sheet = (metaData.sheets ?? []).find(
+    (s: { properties: { title: string } }) => s.properties.title === sheetName,
+  );
+  if (!sheet) throw new Error(`Sheet not found: ${sheetName}`);
+  const sheetId: number = sheet.properties.sheetId;
+
+  // 2. Delete the row via batchUpdate
+  const batchUrl = `${SHEETS_API_BASE}/${spreadsheetId}:batchUpdate`;
+  await fetchSheets(batchUrl, accessToken, {
+    method: 'POST',
+    body: JSON.stringify({
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: 'ROWS',
+              startIndex: rowIndex - 1, // 0-based
+              endIndex: rowIndex,        // exclusive
+            },
+          },
+        },
+      ],
+    }),
+  });
 }
 
 // ===== Planter operations =====
