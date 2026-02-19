@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from '@/stores/app-store';
+import { loadGapiClient, verifyAccessToken, setGapiAccessToken } from '@/services/google-auth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Login } from '@/pages/Login';
 import { Dashboard } from '@/pages/Dashboard';
@@ -16,13 +18,73 @@ import { Settings } from '@/pages/Settings';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = useAppStore((s) => s.user);
+  const isInitializing = useAppStore((s) => s.isInitializing);
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-garden-50 to-green-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center">
+          <span className="text-5xl">🌿</span>
+          <p className="mt-4 text-garden-700 dark:text-garden-400 animate-pulse">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
 }
 
+/**
+ * アプリ起動時に永続化されたユーザー情報があれば、
+ * Google APIを再初期化してアクセストークンを静かに再取得する。
+ */
+function useRestoreSession() {
+  const user = useAppStore((s) => s.user);
+  const googleClientId = useAppStore((s) => s.googleClientId);
+  const setUser = useAppStore((s) => s.setUser);
+  const setIsInitializing = useAppStore((s) => s.setIsInitializing);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restore() {
+      // 永続化されたユーザー情報と accessToken がなければスキップ
+      if (!user || !user.accessToken || !googleClientId) {
+        setIsInitializing(false);
+        return;
+      }
+
+      try {
+        // 保存済みトークンが有効か検証（ポップアップなし）
+        const isValid = await verifyAccessToken(user.accessToken);
+        if (!isValid) {
+          // トークン期限切れ → ログアウト状態に戻す
+          if (!cancelled) setUser(null);
+          return;
+        }
+
+        // GAPI クライアントを初期化してトークンをセット
+        await loadGapiClient();
+        setGapiAccessToken(user.accessToken);
+      } catch {
+        // 検証に失敗 → ログアウト状態に戻す
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setIsInitializing(false);
+      }
+    }
+
+    restore();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
 export default function App() {
+  useRestoreSession();
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

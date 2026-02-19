@@ -6,6 +6,8 @@ interface AppState {
   // Auth
   user: AuthUser | null;
   setUser: (user: AuthUser | null) => void;
+  isInitializing: boolean;
+  setIsInitializing: (v: boolean) => void;
 
   // Config (persisted)
   googleClientId: string;
@@ -43,6 +45,8 @@ export const useAppStore = create<AppState>()(
       // Auth
       user: null,
       setUser: (user) => set({ user }),
+      isInitializing: true,
+      setIsInitializing: (isInitializing) => set({ isInitializing }),
 
       // Config
       googleClientId: '',
@@ -90,6 +94,7 @@ export const useAppStore = create<AppState>()(
         spreadsheetId: state.spreadsheetId,
         driveFolderId: state.driveFolderId,
         darkMode: state.darkMode,
+        user: state.user,
       }),
     },
   ),
