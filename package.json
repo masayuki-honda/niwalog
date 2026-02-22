@@ -10,16 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "browser-image-compression": "^2.0.2",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "exifr": "^7.1.3",
+    "lucide-react": "^0.511.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.6.1",
-    "zustand": "^5.0.5",
     "recharts": "^2.15.0",
-    "date-fns": "^4.1.0",
-    "date-fns-tz": "^3.2.0",
-    "lucide-react": "^0.511.0",
-    "browser-image-compression": "^2.0.2",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
