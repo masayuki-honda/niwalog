@@ -4,7 +4,9 @@ import { initializeSpreadsheet, getSettings, updateSetting } from '@/services/sh
 import { ensureAppFolder, shareFile, unshareFile, listPermissions } from '@/services/drive-api';
 import type { DrivePermission } from '@/services/drive-api';
 import { withAuthRetry } from '@/utils/auth-retry';
-import { Save, Loader2, ExternalLink, RefreshCw, Share2, UserPlus, X, Users } from 'lucide-react';
+import { Save, Loader2, ExternalLink, RefreshCw, Share2, UserPlus, X, Users, Download } from 'lucide-react';
+import { getSheetData } from '@/services/sheets-api';
+import { SHEET_NAMES } from '@/constants';
 
 export function Settings() {
   const {
@@ -433,6 +435,11 @@ export function Settings() {
         </section>
       )}
 
+      {/* CSV Export */}
+      {user && spreadsheetId && (
+        <CsvExportSection spreadsheetId={spreadsheetId} />
+      )}
+
       {/* Display settings */}
       <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
         <h2 className="font-bold text-sm">表示設定</h2>
@@ -458,7 +465,7 @@ export function Settings() {
 
       {/* App info */}
       <div className="text-center text-xs text-gray-400 pb-4">
-        <p>🌱 家庭菜園ダイアリー v0.1.0</p>
+        <p>🌱 家庭菜園ダイアリー v0.2.0</p>
         <p className="mt-1">
           <a
             href="https://github.com/"
@@ -471,5 +478,118 @@ export function Settings() {
         </p>
       </div>
     </div>
+  );
+}
+
+// === CSV Export sub-component ===
+const CSV_SHEETS = [
+  { key: SHEET_NAMES.PLANTERS, label: '栽培区画' },
+  { key: SHEET_NAMES.ACTIVITY_LOGS, label: '作業記録' },
+  { key: SHEET_NAMES.WEATHER_DATA, label: '気象データ' },
+  { key: SHEET_NAMES.SOIL_SENSOR_DATA, label: '土壌センサ' },
+  { key: SHEET_NAMES.HARVEST_SUMMARY, label: '収穫サマリー' },
+  { key: SHEET_NAMES.SETTINGS, label: '設定' },
+] as const;
+
+function CsvExportSection({ spreadsheetId }: { spreadsheetId: string }) {
+  const [exporting, setExporting] = useState(false);
+  const [exportingSheet, setExportingSheet] = useState<string | null>(null);
+
+  const escapeCsvField = (value: string): string => {
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+
+  const downloadCsv = (filename: string, rows: string[][]) => {
+    const bom = '\uFEFF'; // UTF-8 BOM for Excel
+    const csv = rows.map((row) => row.map(escapeCsvField).join(',')).join('\n');
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportSheet = async (sheetName: string) => {
+    setExportingSheet(sheetName);
+    try {
+      const rows = await withAuthRetry((token) =>
+        getSheetData(spreadsheetId, sheetName, token),
+      );
+      const date = new Date().toISOString().slice(0, 10);
+      downloadCsv(`${sheetName}_${date}.csv`, rows);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'エクスポートに失敗しました');
+    } finally {
+      setExportingSheet(null);
+    }
+  };
+
+  const handleExportAll = async () => {
+    setExporting(true);
+    try {
+      for (const sheet of CSV_SHEETS) {
+        setExportingSheet(sheet.key);
+        const rows = await withAuthRetry((token) =>
+          getSheetData(spreadsheetId, sheet.key, token),
+        );
+        const date = new Date().toISOString().slice(0, 10);
+        downloadCsv(`${sheet.key}_${date}.csv`, rows);
+        // Small delay between downloads
+        await new Promise((r) => setTimeout(r, 300));
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'エクスポートに失敗しました');
+    } finally {
+      setExporting(false);
+      setExportingSheet(null);
+    }
+  };
+
+  return (
+    <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+      <h2 className="font-bold text-sm flex items-center gap-1">
+        <Download size={14} />
+        データエクスポート（CSV）
+      </h2>
+      <p className="text-xs text-gray-500">
+        各シートのデータを CSV ファイルとしてダウンロードします。
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {CSV_SHEETS.map((sheet) => (
+          <button
+            key={sheet.key}
+            onClick={() => handleExportSheet(sheet.key)}
+            disabled={exporting || exportingSheet === sheet.key}
+            className="flex items-center justify-center gap-1 px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+          >
+            {exportingSheet === sheet.key ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Download size={12} />
+            )}
+            {sheet.label}
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={handleExportAll}
+        disabled={exporting}
+        className="w-full flex items-center justify-center gap-1 px-3 py-2 text-sm bg-garden-600 text-white rounded-lg hover:bg-garden-700 disabled:bg-gray-400"
+      >
+        {exporting ? (
+          <Loader2 size={14} className="animate-spin" />
+        ) : (
+          <Download size={14} />
+        )}
+        全データを一括エクスポート
+      </button>
+    </section>
   );
 }
