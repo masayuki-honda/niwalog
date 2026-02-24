@@ -1,14 +1,45 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, Droplets, Scissors, Sprout, ImageIcon } from 'lucide-react';
+import { PlusCircle, Droplets, Scissors, Sprout, ImageIcon, Thermometer, Sun, Cloud } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { ACTIVITY_TYPE_CONFIG } from '@/constants';
 import { formatDate, daysSince } from '@/utils';
+import { getWeatherData } from '@/services/sheets-api';
+import { withAuthRetry } from '@/utils/auth-retry';
+import type { WeatherData } from '@/types';
 
 export function Dashboard() {
-  const { planters, activities, spreadsheetId } = useAppStore();
+  const { planters, activities, spreadsheetId, user } = useAppStore();
+  const [todayWeather, setTodayWeather] = useState<WeatherData | null>(null);
 
   const activePlanters = planters.filter((p) => p.status === 'active');
   const recentActivities = activities.slice(0, 5);
+
+  // Fetch latest weather data
+  useEffect(() => {
+    if (!user?.accessToken || !spreadsheetId) return;
+    withAuthRetry((token) => getWeatherData(spreadsheetId, token))
+      .then((rows) => {
+        if (rows.length === 0) return;
+        // Get the latest row
+        const lastRow = rows[rows.length - 1];
+        setTodayWeather({
+          date: lastRow[0] ?? '',
+          tempMax: lastRow[1] ? Number(lastRow[1]) : null,
+          tempMin: lastRow[2] ? Number(lastRow[2]) : null,
+          tempAvg: lastRow[3] ? Number(lastRow[3]) : null,
+          precipitation: lastRow[4] ? Number(lastRow[4]) : null,
+          solarRadiation: lastRow[5] ? Number(lastRow[5]) : null,
+          humidityAvg: lastRow[6] ? Number(lastRow[6]) : null,
+          windSpeedMax: lastRow[7] ? Number(lastRow[7]) : null,
+          source: lastRow[8] ?? '',
+          fetchedAt: lastRow[9] ?? '',
+        });
+      })
+      .catch(() => {
+        // Silently fail - weather section just won't show
+      });
+  }, [user?.accessToken, spreadsheetId]);
 
   // Harvest summary for current month
   const now = new Date();
@@ -61,6 +92,43 @@ export function Dashboard() {
           📅 {formatDate(now.toISOString(), 'yyyy年M月d日(E)')}
         </h1>
       </div>
+
+      {/* Weather summary */}
+      {todayWeather && (
+        <Link
+          to="/weather"
+          className="block bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg border border-blue-100 dark:border-blue-800 p-3 hover:shadow-sm transition-shadow"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Cloud size={20} className="text-blue-500" />
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <span className="flex items-center gap-1">
+                    <Thermometer size={14} className="text-red-500" />
+                    {todayWeather.tempMax ?? '-'}℃
+                  </span>
+                  <span className="text-gray-400">/</span>
+                  <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                    {todayWeather.tempMin ?? '-'}℃
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+                  <span>
+                    <Droplets size={12} className="inline mr-0.5" />
+                    {todayWeather.precipitation ?? 0}mm
+                  </span>
+                  <span>
+                    <Sun size={12} className="inline mr-0.5" />
+                    {todayWeather.solarRadiation ?? '-'} MJ/m²
+                  </span>
+                </div>
+              </div>
+            </div>
+            <span className="text-xs text-gray-400">{todayWeather.date}</span>
+          </div>
+        </Link>
+      )}
 
       {/* Quick actions */}
       <div className="flex gap-2 overflow-x-auto pb-2">
