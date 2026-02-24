@@ -3,7 +3,10 @@ import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
+import { ToastContainer } from '@/components/Toast';
+import { DashboardSkeleton } from '@/components/Skeleton';
 import { useAppStore } from '@/stores/app-store';
+import { toast } from '@/stores/toast-store';
 import { getPlanters, getActivities } from '@/services/sheets-api';
 import { withAuthRetry } from '@/utils/auth-retry';
 import type { Planter, ActivityLog } from '@/types';
@@ -75,9 +78,9 @@ function useLoadAppData() {
         setActivities(activityList);
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : 'データの読み込みに失敗しました',
-          );
+          const msg = err instanceof Error ? err.message : 'データの読み込みに失敗しました';
+          setError(msg);
+          toast.error(msg);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -92,7 +95,7 @@ function useLoadAppData() {
 }
 
 export function AppLayout() {
-  const { darkMode, error, setError } = useAppStore();
+  const { darkMode } = useAppStore();
   const plantersEmpty = useAppStore((s) => s.planters.length === 0);
   const isLoadingData = useLoadAppData();
 
@@ -104,23 +107,9 @@ export function AppLayout() {
           <div className="flex-1 flex flex-col min-h-screen">
             <Header />
 
-            {error && (
-              <div className="mx-4 mt-2 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-center justify-between">
-                <span>{error}</span>
-                <button
-                  onClick={() => setError(null)}
-                  className="text-red-500 hover:text-red-700 font-bold ml-2"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
             <main className="flex-1 p-4 pb-20 md:pb-4 max-w-5xl w-full mx-auto">
               {isLoadingData && plantersEmpty ? (
-                <div className="flex items-center justify-center py-12">
-                  <p className="text-gray-500 dark:text-gray-400 animate-pulse">データを読み込み中...</p>
-                </div>
+                <DashboardSkeleton />
               ) : (
                 <Outlet />
               )}
@@ -128,6 +117,7 @@ export function AppLayout() {
           </div>
         </div>
         <BottomNav />
+        <ToastContainer />
       </div>
     </div>
   );

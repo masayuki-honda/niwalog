@@ -8,6 +8,7 @@ import { withAuthRetry } from '@/utils/auth-retry';
 import { DriveImageGallery } from '@/components/DriveImage';
 import { SHEET_NAMES, ACTIVITY_TYPE_CONFIG } from '@/constants';
 import { formatDate, cn, nowISO, daysSince } from '@/utils';
+import { toast } from '@/stores/toast-store';
 import type { Planter, ActivityLog } from '@/types';
 
 export function PlanterDetail() {
@@ -89,8 +90,11 @@ export function PlanterDetail() {
         ),
       );
       setPlanters(planters.map((p) => (p.id === id ? updatedPlanter : p)));
+      toast.success(newStatus === 'archived' ? 'アーカイブしました' : '復元しました');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '更新に失敗しました');
+      const msg = err instanceof Error ? err.message : '更新に失敗しました';
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -119,9 +123,12 @@ export function PlanterDetail() {
         );
       }
       setPlanters(planters.filter((p) => p.id !== id));
+      toast.success('プランターを削除しました');
       navigate('/planters');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '削除に失敗しました');
+      const msg = err instanceof Error ? err.message : '削除に失敗しました';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setDeleting(false);
     }

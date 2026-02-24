@@ -8,6 +8,7 @@ import { compressImage, extractExifDate } from '@/utils/image-compressor';
 import { withAuthRetry } from '@/utils/auth-retry';
 import { ACTIVITY_TYPE_CONFIG, IMAGE_SETTINGS } from '@/constants';
 import { generateId, nowISO, cn, joinPhotoIds } from '@/utils';
+import { toast } from '@/stores/toast-store';
 import type { ActivityLog, ActivityType } from '@/types';
 
 export function ActivityForm() {
@@ -142,6 +143,7 @@ export function ActivityForm() {
         addActivityToSheet(spreadsheetId, row, token),
       );
       addActivityToStore(activity);
+      toast.success('アクティビティを記録しました');
 
       // Cleanup preview URLs
       photoPreviews.forEach((url) => URL.revokeObjectURL(url));
@@ -153,7 +155,9 @@ export function ActivityForm() {
         navigate('/');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '保存に失敗しました');
+      const msg = err instanceof Error ? err.message : '保存に失敗しました';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
       setUploadingPhotos(false);
