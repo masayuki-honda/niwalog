@@ -174,3 +174,81 @@ export async function ensurePlanterFolder(
 
   return createFolder(planterId, parentFolderId, accessToken);
 }
+
+// ===== Sharing / Permissions =====
+
+export interface DrivePermission {
+  id: string;
+  type: string;         // "user" | "group" | "domain" | "anyone"
+  role: string;         // "owner" | "writer" | "reader"
+  emailAddress?: string;
+  displayName?: string;
+}
+
+/**
+ * List permissions on a file / folder
+ */
+export async function listPermissions(
+  fileId: string,
+  accessToken: string,
+): Promise<DrivePermission[]> {
+  const url = `${DRIVE_API_BASE}/files/${fileId}/permissions?fields=permissions(id,type,role,emailAddress,displayName)`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) throw new Error(`Failed to list permissions: ${res.status}`);
+  const data = await res.json();
+  return data.permissions ?? [];
+}
+
+/**
+ * Share a file with a specific email address.
+ * Sends a notification email by default.
+ */
+export async function shareFile(
+  fileId: string,
+  email: string,
+  role: 'writer' | 'reader',
+  accessToken: string,
+  sendNotification = true,
+): Promise<DrivePermission> {
+  const url = `${DRIVE_API_BASE}/files/${fileId}/permissions?sendNotificationEmail=${sendNotification}&fields=id,type,role,emailAddress,displayName`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      type: 'user',
+      role,
+      emailAddress: email,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`共有の追加に失敗しました: ${res.status} ${JSON.stringify(err)}`);
+  }
+  return res.json();
+}
+
+/**
+ * Remove a permission (unshare) from a file
+ */
+export async function unshareFile(
+  fileId: string,
+  permissionId: string,
+  accessToken: string,
+): Promise<void> {
+  const res = await fetch(`${DRIVE_API_BASE}/files/${fileId}/permissions/${permissionId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`共有の解除に失敗しました: ${res.status} ${JSON.stringify(err)}`);
+  }
+}

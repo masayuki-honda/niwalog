@@ -2,7 +2,7 @@
 
 **バージョン:** 3.0
 **作成日:** 2026年2月20日
-**最終更新:** 2026年2月24日（Phase 3 分析機能完了）
+**最終更新:** 2026年2月24日（Phase 3 完了 — 共有メンバー管理追加）
 **ステータス:** 確定
 **対応設計仕様書:** design-specification.md v3.0
 
@@ -956,6 +956,24 @@ dist/
 ### 16.5 GAS 連携を追加する場合
 
 `gas/` ディレクトリは SPA とは独立したスクリプト。Apps Script エディタにコピー＆ペーストして使用。SPA から直接呼び出さない（GAS は Sheets/Drive に書き込む役割のみ）。
+
+### 16.6 共有メンバー管理（実装済み）
+
+**概要:** Settings ページからメールアドレスでメンバーを追加/削除。スプレッドシートとドライブフォルダの編集権限を自動付与/削除する。
+
+**使用API:**
+
+| 操作 | API |
+|------|-----|
+| メンバー一覧取得 | `sheets-api.ts` → `getSettings()` で `shared_emails` 読み取り |
+| メンバー追加 | `drive-api.ts` → `shareFile()` (Drive Permissions API) + `sheets-api.ts` → `updateSetting()` |
+| メンバー削除 | `drive-api.ts` → `listPermissions()` → `unshareFile()` + `sheets-api.ts` → `updateSetting()` |
+
+**データフロー:**
+
+1. メンバー追加時: スプレッドシート共有 → ドライブフォルダ共有 → settings シートの `shared_emails` 更新
+2. メンバー削除時: スプレッドシート権限削除 → ドライブフォルダ権限削除 → settings シートの `shared_emails` 更新
+3. ドライブフォルダの共有失敗は非致命的として処理継続（`drive.file` スコープ制約対応）
 
 ---
 

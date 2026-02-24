@@ -189,6 +189,27 @@ export async function getSettings(spreadsheetId: string, accessToken: string) {
   return settings;
 }
 
+/**
+ * Update or insert a setting in the settings sheet
+ */
+export async function updateSetting(
+  spreadsheetId: string,
+  key: string,
+  value: string,
+  accessToken: string,
+): Promise<void> {
+  const rows = await getSheetData(spreadsheetId, SHEET_NAMES.SETTINGS, accessToken);
+  const rowIdx = rows.findIndex((row) => row[0] === key);
+
+  if (rowIdx >= 0) {
+    // Update existing row (1-based)
+    await updateRow(spreadsheetId, SHEET_NAMES.SETTINGS, rowIdx + 1, [key, value], accessToken);
+  } else {
+    // Append new row
+    await appendRows(spreadsheetId, SHEET_NAMES.SETTINGS, [[key, value]], accessToken);
+  }
+}
+
 // ===== Helper =====
 
 function columnLetter(colNumber: number): string {
