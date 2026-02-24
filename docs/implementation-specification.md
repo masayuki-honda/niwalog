@@ -1,9 +1,10 @@
 # HomeGardenDiary 実装仕様書
 
-**バージョン:** 1.0  
-**作成日:** 2026年2月20日  
-**ステータス:** 確定  
-**対応設計仕様書:** design-specification.md v1.0
+**バージョン:** 3.0
+**作成日:** 2026年2月20日
+**最終更新:** 2026年2月24日（Phase 3 分析機能完了）
+**ステータス:** 確定
+**対応設計仕様書:** design-specification.md v3.0
 
 ---
 
@@ -71,9 +72,10 @@ export default defineConfig({
 | `react-dom` | ^19.2.0 | DOMレンダリング |
 | `react-router-dom` | ^7.6.1 | SPAルーティング |
 | `zustand` | ^5.0.5 | グローバル状態管理 |
-| `recharts` | ^2.15.0 | グラフ・チャート |
+| `recharts` | ^2.15.0 | グラフ・チャート（Weather/SoilSensorページで使用） |
 | `date-fns` | ^4.1.0 | 日付操作 |
 | `date-fns-tz` | ^3.2.0 | タイムゾーン変換 |
+| `exifr` | ^7.1.3 | EXIFデータ抽出（写真の日付・向き取得） |
 | `lucide-react` | ^0.511.0 | アイコン |
 | `browser-image-compression` | ^2.0.2 | クライアント画像圧縮 |
 | `uuid` | ^11.1.0 | UUID生成（fallback用） |
@@ -109,30 +111,29 @@ src/
 │
 ├── pages/                      # 画面コンポーネント（1ファイル = 1ルート）
 │   ├── Login.tsx               # /login
-│   ├── Dashboard.tsx           # /
+│   ├── Dashboard.tsx           # / （天気サマリーカード含む）
 │   ├── PlanterList.tsx         # /planters
 │   ├── PlanterDetail.tsx       # /planters/:id
 │   ├── ActivityForm.tsx        # /activities/new?planterId=xxx
 │   ├── Calendar.tsx            # /calendar
-│   ├── Weather.tsx             # /weather
-│   ├── SoilSensor.tsx          # /planters/:id/sensor
+│   ├── Weather.tsx             # /weather （Recharts 複合チャート + 4タブ）
+│   ├── SoilSensor.tsx          # /soil-sensor?planterId=xxx
 │   ├── Analytics.tsx           # /analytics
 │   ├── Review.tsx              # /review
 │   ├── PhotoGallery.tsx        # /photos
 │   └── Settings.tsx            # /settings
 │
 ├── components/
-│   ├── layout/
-│   │   ├── AppLayout.tsx       # ヘッダー + サイドバー/ボトムナビ のラッパー
-│   │   ├── Header.tsx          # ページ上部ヘッダー
-│   │   ├── Sidebar.tsx         # PC用左サイドバー
-│   │   └── BottomNav.tsx       # モバイル用下部ナビゲーション
 │   ├── DriveImage.tsx          # Google Drive 画像表示コンポーネント
-│   └── ui/                     # 汎用UIコンポーネント（shadcn/ui 形式）
+│   └── layout/
+│       ├── AppLayout.tsx       # ヘッダー + サイドバー/ボトムナビ のラッパー
+│       ├── Header.tsx          # ページ上部ヘッダー
+│       ├── Sidebar.tsx         # PC用左サイドバー（土壌センサーリンク含む）
+│       └── BottomNav.tsx       # モバイル用下部ナビゲーション
 │
 ├── services/                   # 外部API通信（副作用のある処理はここに集約）
 │   ├── google-auth.ts          # GAPI/GIS 初期化・トークン管理
-│   ├── sheets-api.ts           # Sheets API ラッパー
+│   ├── sheets-api.ts           # Sheets API ラッパー（weather/soil取得含む）
 │   └── drive-api.ts            # Drive API ラッパー
 │
 ├── stores/
@@ -149,7 +150,8 @@ src/
     ├── index.ts                # 汎用ユーティリティ関数
     ├── auth-retry.ts           # 401時トークンリフレッシュ + リトライ
     ├── image-compressor.ts     # 画像圧縮
-    └── date-imports.ts         # date-fns / date-fns-tz の re-export
+    ├── date-imports.ts         # date-fns / date-fns-tz の re-export
+    └── correlation.ts          # 統計ユーティリティ（ピアソン相関係数、GDD計算）
 ```
 
 ---
@@ -381,6 +383,8 @@ interface AppState {
 | `addPlanter` | planters シート末尾に追加 |
 | `getActivities` | activity_logs シート全行取得 |
 | `addActivity` | activity_logs シート末尾に追加 |
+| `getWeatherData` | weather_data シートからヘッダー行を除いた全データ行を返却（Phase 2 追加） |
+| `getSoilSensorData` | soil_sensor_data シートからヘッダー行を除いた全データ行を返却（Phase 2 追加） |
 | `getSettings` | settings シートを `Record<string, string>` にパース |
 | `initializeSpreadsheet` | 6シートのヘッダー行を一括初期化（初回セットアップ） |
 
@@ -470,6 +474,17 @@ export async function compressImage(file: File): Promise<Blob>
 ### 7.4 utils/date-imports.ts
 
 `date-fns` と `date-fns-tz` の必要な関数を1箇所で re-export。直接 `date-fns` から import するのではなくこのファイルを通すことで、将来的なバージョン変更の影響を局所化する。
+
+**現在の re-export 一覧:**
+
+```typescript
+export {
+  format, parseISO, differenceInDays, startOfMonth, endOfMonth,
+  eachDayOfInterval, isSameDay, isToday, addMonths, subMonths,
+  subDays, getYear, getMonth, startOfYear, endOfYear,
+} from 'date-fns';
+export { ja } from 'date-fns/locale/ja';
+```
 
 ---
 
@@ -700,14 +715,13 @@ const weatherData: WeatherData[] = rows.slice(1)
 
 ### 11.1 ファイル配置ルール
 
-| 種別 | 配置場所 |
-|------|---------|
-| 画面コンポーネント | `pages/` |
-| レイアウト | `components/layout/` |
-| チャート | `components/charts/` |
-| プランター関連 | `components/planters/` |
-| 作業記録関連 | `components/activities/` |
-| 汎用UI | `components/ui/` |
+| 種別 | 配置場所 | 備考 |
+|------|---------|------|
+| 画面コンポーネント | `pages/` | 1ファイル = 1ルート。チャートロジックも各ページ内に含む |
+| レイアウト | `components/layout/` | AppLayout, Header, Sidebar, BottomNav |
+| Google Drive画像 | `components/DriveImage.tsx` | CORS対応画像表示 |
+
+> **Note:** 現時点では `components/charts/`, `components/ui/`, `components/planters/`, `components/activities/` ディレクトリは未作成。Phase 3 以降でコンポーネントの切り出しが必要になった場合に作成する。
 
 ### 11.2 props 設計
 
@@ -749,7 +763,7 @@ Google Drive の画像は通常の `<img src>` では CORS制限で表示でき�
     <Route path="activities/new" element={<ActivityForm />} />
     <Route path="calendar" element={<Calendar />} />
     <Route path="weather" element={<Weather />} />
-    <Route path="planters/:id/sensor" element={<SoilSensor />} />
+    <Route path="soil-sensor" element={<SoilSensor />} />
     <Route path="analytics" element={<Analytics />} />
     <Route path="review" element={<Review />} />
     <Route path="photos" element={<PhotoGallery />} />
@@ -763,14 +777,14 @@ Google Drive の画像は通常の `<img src>` では CORS制限で表示でき�
 | ページ | 主な責務 |
 |--------|---------|
 | `Login` | GAPI/GIS初期化・OAuth認証・ストア更新 |
-| `Dashboard` | planters / activities / weather を取得して概要表示 |
+| `Dashboard` | planters / activities / weather を取得して概要表示。天気サマリーカード（気温・降水量・日射量）含む |
 | `PlanterList` | planters 一覧・フィルタ・新規登録ナビゲーション |
 | `PlanterDetail` | 単一プランター詳細・タイムライン・タブ切替 |
 | `ActivityForm` | 作業記録の新規作成（クエリパラメータ `planterId` で事前選択） |
 | `Calendar` | activities を月間カレンダーにオーバーレイ表示 |
-| `Weather` | weather_data を Recharts でグラフ表示 |
-| `SoilSensor` | soil_sensor_data をグラフ表示（データなしは非表示） |
-| `Analytics` | 相関分析・収穫ダッシュボード |
+| `Weather` | weather_data を Recharts ComposedChart で表示。4タブ（概要/気温/降水量/日射量）、期間フィルタ（1w/1m/3m/1y/all）、StatCard、データテーブル |
+| `SoilSensor` | soil_sensor_data を Recharts で表示。4タブ（概要/VWC/地温/EC）、プランター選択、期間フィルタ（1d/1w/1m/3m/all）、VWC閾値ライン（DRY=20%/WET=45%）|
+| `Analytics` | 3タブ構成（収穫/相関分析/積算温度）。収穫ダッシュボード（月別・年別・作物別）、相関分析（気温×収穫・日射×収穫・降水×VWC・オーバーレイ）、GDD積算温度計算・グラフ |
 | `Review` | 月次・年次サマリーレポート |
 | `PhotoGallery` | Drive の全写真を時系列表示 |
 | `Settings` | googleClientId / spreadsheetId / driveFolderId の登録・編集 |
@@ -924,9 +938,12 @@ dist/
 
 ### 16.3 新しいグラフを追加する場合
 
-1. `src/components/charts/` に `XxxChart.tsx` を作成
-2. Recharts の `ResponsiveContainer` でラップしてレスポンシブに対応
-3. データは親コンポーネントが取得し、props で渡す
+現在はチャートロジックを各ページコンポーネント（`Weather.tsx`, `SoilSensor.tsx`）内に直接実装している。
+
+1. 小規模なチャートはページ内に直接実装する
+2. 複数ページで再利用する場合は `src/components/charts/` ディレクトリを作成して切り出す
+3. Recharts の `ResponsiveContainer` でラップしてレスポンシブに対応
+4. データは親コンポーネントが取得し、props で渡す
 
 ### 16.4 カスタムフックを追加する場合
 
