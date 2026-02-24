@@ -9,6 +9,7 @@ import {
   Cloud,
   Camera,
   ClipboardList,
+  Radar,
 } from 'lucide-react';
 import { cn } from '@/utils';
 
@@ -26,6 +27,7 @@ const navGroups = [
     items: [
       { to: '/calendar', icon: Calendar, label: 'カレンダー' },
       { to: '/weather', icon: Cloud, label: '気象データ' },
+      { to: '/soil-sensor', icon: Radar, label: '土壌センサー' },
       { to: '/photos', icon: Camera, label: '写真' },
     ],
   },

@@ -4,7 +4,7 @@ import { ArrowLeft, Camera, X, Loader2 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { addActivity as addActivityToSheet } from '@/services/sheets-api';
 import { ensureAppFolder, ensurePlanterFolder, uploadFile } from '@/services/drive-api';
-import { compressImage } from '@/utils/image-compressor';
+import { compressImage, extractExifDate } from '@/utils/image-compressor';
 import { withAuthRetry } from '@/utils/auth-retry';
 import { ACTIVITY_TYPE_CONFIG, IMAGE_SETTINGS } from '@/constants';
 import { generateId, nowISO, cn, joinPhotoIds } from '@/utils';
@@ -36,6 +36,7 @@ export function ActivityForm() {
   const [harvestUnit, setHarvestUnit] = useState('個');
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [dateSetFromExif, setDateSetFromExif] = useState(false);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -43,6 +44,16 @@ export function ActivityForm() {
 
     const remaining = IMAGE_SETTINGS.maxPhotosPerActivity - photos.length;
     const selected = files.slice(0, remaining);
+
+    // Try to read EXIF date from the first selected photo
+    // Use EXIF date if it's the first photo being added (photos is empty)
+    if (photos.length === 0) {
+      const exifDate = await extractExifDate(selected[0]);
+      if (exifDate) {
+        setActivityDate(exifDate);
+        setDateSetFromExif(true);
+      }
+    }
 
     // Create previews
     const previews = selected.map((f) => URL.createObjectURL(f));
@@ -216,10 +227,13 @@ export function ActivityForm() {
             <input
               type="date"
               value={activityDate}
-              onChange={(e) => setActivityDate(e.target.value)}
+              onChange={(e) => { setActivityDate(e.target.value); setDateSetFromExif(false); }}
               required
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm outline-none focus:ring-2 focus:ring-garden-500"
             />
+            {dateSetFromExif && (
+              <p className="text-xs text-garden-600 dark:text-garden-400 mt-1">📷 写真のEXIF情報から日付を自動設定しました</p>
+            )}
           </div>
 
           {/* Harvest fields */}

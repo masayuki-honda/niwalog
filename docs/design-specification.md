@@ -1,7 +1,8 @@
 # HomeGardenDiary 仕様書
 
-**バージョン:** 1.0
+**バージョン:** 3.0
 **作成日:** 2026年2月18日
+**最終更新:** 2026年2月24日（Phase 3 分析機能完了）
 **ステータス:** 確定
 
 ---
@@ -101,8 +102,8 @@
 
 | レイヤー | 技術 | 選定理由 |
 |----------|------|----------|
-| フロントエンド | **Vite + React 18 + TypeScript** | 静的ビルド可、高速、GitHub Pages 対応 |
-| UIフレームワーク | **Tailwind CSS + shadcn/ui** | モダンUI、完全無料 |
+| フロントエンド | **Vite 7 + React 19 + TypeScript** | 静的ビルド可、高速、GitHub Pages 対応 |
+| UIフレームワーク | **Tailwind CSS** | モダンUI、完全無料 |
 | ルーティング | **React Router v7** | SPA用ルーティング |
 | 状態管理 | **Zustand** | 軽量、シンプル |
 | グラフ・チャート | **Recharts** | React向け、無料、相関分析表示に対応 |
@@ -410,7 +411,7 @@ HomeGardenDiary
 
 | ID | 機能 | 詳細 |
 |----|------|------|
-| F-05-01 | 自動取得 | GAS 時間トリガー（毎日6:00）で Open-Meteo API から取得しシートに書き込み |
+| F-05-01 | 自動取得 | GAS 時間トリガー（毎日 5:00〜6:00）で Open-Meteo API から取得しシートに書き込み |
 | F-05-02 | 表示 | 折れ線グラフ（気温）、棒グラフ（降水量）、エリアチャート（日射量） |
 | F-05-03 | 期間選択 | 1週間 / 1ヶ月 / 3ヶ月 / 1年 / カスタム |
 | F-05-04 | 過去データ一括取得 | 初回設定時に過去1年分を一括取得（GAS関数を手動実行） |
@@ -470,7 +471,7 @@ HomeGardenDiary
 | 5 | 作業記録登録 | `/activities/new` | フォーム（モーダル or ページ） |
 | 6 | カレンダー | `/calendar` | 月間カレンダー + 作業アイコン |
 | 7 | 気象データ | `/weather` | 気象グラフ表示 |
-| 8 | 土壌センサ | `/planters/:id/sensor` | センサデータグラフ |
+| 8 | 土壌センサ | `/soil-sensor` | センサデータグラフ（クエリパラメータ `planterId` で栽培区画選択） |
 | 9 | 分析 | `/analytics` | 各種相関分析・ダッシュボード |
 | 10 | 振り返り | `/review` | 月次/年次レポート |
 | 11 | 設定 | `/settings` | ユーザー設定 |
@@ -565,7 +566,7 @@ gas/
 
 | トリガー | 関数 | スケジュール | 説明 |
 |----------|------|-------------|------|
-| 時間トリガー | `fetchDailyWeather` | 毎日 6:00 | Open-Meteo API から気象データ取得 |
+| 時間トリガー | `fetchDailyWeather` | 毎日 5:00〜6:00 | Open-Meteo API から気象データ取得（GAS の仕様により指定時間帯内でランダム実行） |
 
 ### 7.3 GAS Web App（土壌センサ受信）
 
@@ -676,29 +677,32 @@ Parameters:
 
 ## 10. 開発フェーズ
 
-### Phase 1: MVP（4-6週間）
+### Phase 1: MVP（4-6週間）✅ 完了
 
-- [ ] プロジェクトセットアップ（Vite + React + TypeScript）
-- [ ] GitHub Actions / GitHub Pages デプロイ設定
-- [ ] Google OAuth ログイン
-- [ ] Google Sheets API / Drive API 連携基盤
-- [ ] 栽培区画 CRUD
-- [ ] 作業記録 CRUD（写真付き）
-- [ ] 栽培区画詳細タイムライン表示
-- [ ] 基本レスポンシブデザイン（モバイル + PC）
+- [x] プロジェクトセットアップ（Vite + React + TypeScript）
+- [x] GitHub Actions / GitHub Pages デプロイ設定
+- [x] Google OAuth ログイン
+- [x] Google Sheets API / Drive API 連携基盤
+- [x] 栽培区画 CRUD
+- [x] 作業記録 CRUD（写真付き）
+- [x] 栽培区画詳細タイムライン表示
+- [x] 基本レスポンシブデザイン（モバイル + PC）
 
-### Phase 2: 環境データ（2-3週間）
+### Phase 2: 環境データ（2-3週間）✅ 完了
 
-- [ ] GAS: Open-Meteo API から気象データ自動取得
-- [ ] 気象グラフ表示（気温・降水量・日射量）
-- [ ] GAS: 土壌センサ HTTP POST 受信 Web App
-- [ ] 土壌センサグラフ表示（VWC・地温・EC）
+- [x] GAS: Open-Meteo API から気象データ自動取得（weather-fetcher.gs）
+- [x] 気象グラフ表示（気温・降水量・日射量 — Recharts による複合チャート + タブUI）
+- [x] GAS: 土壌センサ HTTP POST 受信 Web App（soil-sensor-receiver.gs）
+- [x] 土壌センサグラフ表示（VWC・地温・EC — Recharts + VWC 閾値ライン）
+- [x] ダッシュボードに天気サマリーカード追加
+- [x] サイドバーに土壌センサーナビゲーション追加
+- [x] GAS トリガー設定スクリプト（triggers-setup.gs）
 
 ### Phase 3: 分析・共有（2-3週間）
 
-- [ ] 相関分析（気温×収穫、VWC×水やり、EC×施肥）
-- [ ] 収穫ダッシュボード（月別・年別・作物別）
-- [ ] 積算温度計算・表示
+- [x] 相関分析（気温×収穫、日射量×収穫、降水量×VWC、VWC×水やり、EC×施肥）
+- [x] 収穫ダッシュボード（月別・年別・作物別 — 積み上げ棒グラフ + サマリーテーブル）
+- [x] 積算温度（GDD）計算・表示（基準温度可変、プランター別）
 - [ ] 共有メンバー管理
 
 ### Phase 4: 振り返り・PWA（2週間）
@@ -783,33 +787,22 @@ HomeGardenDiary/
 │   │   │   └── Sidebar.tsx         # PC用サイドバー
 │   │   ├── charts/
 │   │   │   ├── WeatherChart.tsx
-│   │   │   ├── SoilSensorChart.tsx
-│   │   │   ├── CorrelationChart.tsx
-│   │   │   └── HarvestChart.tsx
-│   │   ├── planters/
-│   │   │   ├── PlanterCard.tsx
-│   │   │   └── Timeline.tsx
-│   │   └── activities/
-│   │       ├── ActivityItem.tsx
-│   │       └── QuickActions.tsx    # ワンタップ記録ボタン
 │   ├── services/
 │   │   ├── google-auth.ts          # Google OAuth
-│   │   ├── sheets-api.ts           # Sheets API ラッパー
-│   │   ├── drive-api.ts            # Drive API ラッパー
-│   │   └── open-meteo.ts           # 気象API
-│   ├── hooks/
-│   │   ├── useAuth.ts
-│   │   ├── usePlanters.ts
-│   │   ├── useActivities.ts
-│   │   ├── useWeather.ts
-│   │   └── useSoilSensor.ts
+│   │   ├── sheets-api.ts           # Sheets API ラッパー（weather/soil取得含む）
+│   │   └── drive-api.ts            # Drive API ラッパー
 │   ├── stores/
 │   │   └── app-store.ts            # Zustand 状態管理
 │   ├── types/
-│   │   └── index.ts                # TypeScript 型定義
+│   │   ├── index.ts                # TypeScript 型定義
+│   │   └── google.d.ts             # GAPI / GIS 型宣言
+│   ├── constants/
+│   │   └── index.ts                # 定数定義
 │   └── utils/
+│       ├── index.ts                # 汎用ユーティリティ
+│       ├── auth-retry.ts           # 401リトライ処理
 │       ├── image-compressor.ts     # 画像圧縮
-│       └── correlation.ts          # 相関係数計算
+│       └── date-imports.ts         # date-fns re-export
 ├── index.html
 ├── vite.config.ts
 ├── tailwind.config.ts

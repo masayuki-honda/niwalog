@@ -162,6 +162,22 @@ export async function addActivity(
   await appendRows(spreadsheetId, SHEET_NAMES.ACTIVITY_LOGS, [row], accessToken);
 }
 
+// ===== Weather operations =====
+
+export async function getWeatherData(spreadsheetId: string, accessToken: string) {
+  const rows = await getSheetData(spreadsheetId, SHEET_NAMES.WEATHER_DATA, accessToken);
+  if (rows.length <= 1) return [];
+  return rows.slice(1).filter((row) => row[0]);
+}
+
+// ===== Soil Sensor operations =====
+
+export async function getSoilSensorData(spreadsheetId: string, accessToken: string) {
+  const rows = await getSheetData(spreadsheetId, SHEET_NAMES.SOIL_SENSOR_DATA, accessToken);
+  if (rows.length <= 1) return [];
+  return rows.slice(1).filter((row) => row[0]);
+}
+
 // ===== Settings operations =====
 
 export async function getSettings(spreadsheetId: string, accessToken: string) {
