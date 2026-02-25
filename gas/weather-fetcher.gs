@@ -27,9 +27,21 @@ const TIMEZONE = 'Asia/Tokyo';
 /** weather_data シート名 */
 const WEATHER_SHEET_NAME = 'weather_data';
 
+/**
+ * Open-Meteo API キー（任意）。
+ * 無料登録で 10,000 リクエスト/日に増加。GAS 共有 IP のレート制限を回避できる。
+ * https://open-meteo.com/en/pricing → Sign Up (Free) でキーを取得可能。
+ * 未設定の場合は空文字列のままでよい。
+ */
+const OPEN_METEO_API_KEY = '';
+
 // ===== Open-Meteo API =====
 
 const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
+
+/** 429 リトライ設定 */
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY_MS = 10000; // 10秒
 
 /**
  * 日次トリガーで呼ばれるメイン関数。
@@ -37,13 +49,22 @@ const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
  */
 function fetchDailyWeather() {
   try {
+    // まず前日データが既に存在するか確認（不要な API 呼び出し回避）
+    const sheet = getOrCreateWeatherSheet();
+    const yesterday = formatDateISO(new Date(Date.now() - 86400000));
+    const existingDates = getExistingDates(sheet);
+
+    if (existingDates.has(yesterday)) {
+      Logger.log(`Data for ${yesterday} already exists. Skipping API call.`);
+      return;
+    }
+
     const data = fetchWeatherFromAPI(1); // past_days=1 で前日分を取得
     if (!data || data.length === 0) {
       Logger.log('No weather data returned.');
       return;
     }
 
-    const sheet = getOrCreateWeatherSheet();
     appendWeatherRows(sheet, data);
     Logger.log(`Successfully added ${data.length} weather record(s).`);
   } catch (e) {
@@ -97,7 +118,7 @@ function fetchPastYearWeather() {
 // ===== API呼び出し =====
 
 /**
- * Open-Meteo Forecast API からデータ取得
+ * Open-Meteo Forecast API からデータ取得（429 リトライ付き）
  * @param {number} pastDays - 過去何日分を取得するか
  * @returns {string[][]} シートに追加する行データ
  */
@@ -119,6 +140,10 @@ function fetchWeatherFromAPI(pastDays) {
     forecast_days: 0,
   };
 
+  if (OPEN_METEO_API_KEY) {
+    params.apikey = OPEN_METEO_API_KEY;
+  }
+
   const queryString = Object.entries(params)
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
     .join('&');
@@ -126,19 +151,12 @@ function fetchWeatherFromAPI(pastDays) {
   const url = `${OPEN_METEO_BASE}?${queryString}`;
   Logger.log(`Fetching: ${url}`);
 
-  const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-  const code = response.getResponseCode();
-
-  if (code !== 200) {
-    throw new Error(`Open-Meteo API returned HTTP ${code}: ${response.getContentText()}`);
-  }
-
-  const json = JSON.parse(response.getContentText());
+  const json = fetchWithRetry(url);
   return parseDailyData(json);
 }
 
 /**
- * Open-Meteo Archive API から過去データを取得
+ * Open-Meteo Archive API から過去データを取得（429 リトライ付き）
  * @param {string} startDate - ISO date (yyyy-MM-dd)
  * @param {string} endDate - ISO date (yyyy-MM-dd)
  * @returns {string[][]} シートに追加する行データ
@@ -163,6 +181,10 @@ function fetchWeatherFromArchiveAPI(startDate, endDate) {
     end_date: endDate,
   };
 
+  if (OPEN_METEO_API_KEY) {
+    params.apikey = OPEN_METEO_API_KEY;
+  }
+
   const queryString = Object.entries(params)
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
     .join('&');
@@ -170,14 +192,7 @@ function fetchWeatherFromArchiveAPI(startDate, endDate) {
   const url = `${archiveBase}?${queryString}`;
   Logger.log(`Fetching archive: ${url}`);
 
-  const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-  const code = response.getResponseCode();
-
-  if (code !== 200) {
-    throw new Error(`Open-Meteo Archive API returned HTTP ${code}: ${response.getContentText()}`);
-  }
-
-  const json = JSON.parse(response.getContentText());
+  const json = fetchWithRetry(url);
   return parseDailyData(json);
 }
 
@@ -273,6 +288,41 @@ function getExistingDates(sheet) {
 }
 
 // ===== ユーティリティ =====
+
+/**
+ * URLFetch with retry on 429 (rate-limit) errors.
+ * 指数バックオフで最大 MAX_RETRIES 回リトライする。
+ * @param {string} url - リクエストURL
+ * @returns {object} パース済み JSON レスポンス
+ */
+function fetchWithRetry(url) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+      Logger.log(`Rate limited (429). Retrying in ${delay / 1000}s... (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+      Utilities.sleep(delay);
+    }
+
+    const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    const code = response.getResponseCode();
+
+    if (code === 200) {
+      return JSON.parse(response.getContentText());
+    }
+
+    if (code === 429 && attempt < MAX_RETRIES) {
+      lastError = new Error(`Open-Meteo API returned HTTP 429: ${response.getContentText()}`);
+      continue; // リトライ
+    }
+
+    // 429 以外のエラー、またはリトライ上限
+    throw new Error(`Open-Meteo API returned HTTP ${code}: ${response.getContentText()}`);
+  }
+
+  throw lastError;
+}
 
 function valueOrEmpty(v) {
   return v != null ? v : '';
