@@ -2,7 +2,7 @@
 
 **バージョン:** 3.0
 **作成日:** 2026年2月18日
-**最終更新:** 2026年2月25日（Phase 5 改善・追加完了）
+**最終更新:** 2026年2月26日（Phase A/B/C 改善完了反映）
 **ステータス:** 確定
 
 ---
@@ -750,9 +750,14 @@ Parameters:
 niwalog/
 ├── .github/
 │   └── workflows/
+│       ├── ci.yml                  # GitHub Actions: PR時のCI（Lint/Typecheck/Test/Build/Lighthouse）
 │       └── deploy.yml              # GitHub Actions: ビルド→Pages公開
 ├── docs/
-│   └── specification.md            # 本仕様書
+│   ├── design-specification.md  # 設計仕様書（本ドキュメント）
+│   ├── implementation-specification.md # 実装仕様書
+│   ├── setup-guide.md          # セットアップガイド
+│   ├── improvement-proposals.md # 構成改善提案
+│   └── diagrams/               # 構成図（drawio）
 ├── gas/
 │   ├── soil-sensor-receiver.gs     # 土壌センサ HTTP POST 受信
 │   ├── weather-fetcher.gs          # 気象データ定期取得
@@ -760,7 +765,6 @@ niwalog/
 │   └── README.md                   # GAS 設定手順
 ├── public/
 │   ├── icons/                      # PWAアイコン
-│   ├── manifest.json               # PWAマニフェスト
 │   └── 404.html                    # SPA用フォールバック
 ├── src/
 │   ├── App.tsx
@@ -780,19 +784,25 @@ niwalog/
 │   │   ├── PhotoGallery.tsx        # 写真ギャラリー
 │   │   └── Settings.tsx            # 設定
 │   ├── components/
-│   │   ├── ui/                     # shadcn/ui コンポーネント
-│   │   ├── layout/
-│   │   │   ├── Header.tsx
+│   │   ├── ReloadPrompt.tsx    # SW更新通知UI
+│   │   ├── DriveImage.tsx      # Google Drive 画像表示
+│   │   ├── Skeleton.tsx        # スケルトンローディング
+│   │   ├── Toast.tsx           # Toast通知
+│   │   └── layout/
+│   │   ├── Header.tsx
 │   │   │   ├── BottomNav.tsx       # モバイル下部ナビ
 │   │   │   └── Sidebar.tsx         # PC用サイドバー
-│   │   ├── charts/
-│   │   │   ├── WeatherChart.tsx
 │   ├── services/
 │   │   ├── google-auth.ts          # Google OAuth
 │   │   ├── sheets-api.ts           # Sheets API ラッパー（weather/soil取得含む）
-│   │   └── drive-api.ts            # Drive API ラッパー
+│   │   ├── drive-api.ts            # Drive API ラッパー
+│   │   └── weather-forecast.ts     # 天気予報API
 │   ├── stores/
-│   │   └── app-store.ts            # Zustand 状態管理
+│   │   ├── app-store.ts            # Zustand 状態管理
+│   │   └── toast-store.ts          # Toast通知ストア
+│   ├── test/
+│   │   ├── setup.ts                # テスト環境セットアップ
+│   │   └── test-utils.tsx          # テスト用レンダーユーティリティ
 │   ├── types/
 │   │   ├── index.ts                # TypeScript 型定義
 │   │   └── google.d.ts             # GAPI / GIS 型宣言
@@ -801,11 +811,14 @@ niwalog/
 │   └── utils/
 │       ├── index.ts                # 汎用ユーティリティ
 │       ├── auth-retry.ts           # 401リトライ処理
+│       ├── correlation.ts          # 統計ユーティリティ（相関係数・GDD）
 │       ├── image-compressor.ts     # 画像圧縮
 │       └── date-imports.ts         # date-fns re-export
 ├── index.html
-├── vite.config.ts
-├── tailwind.config.ts
+├── lighthouserc.json               # Lighthouse CI 設定
+├── vitest.config.ts                # Vitest テスト設定
+├── vite.config.ts                  # Vite + vite-plugin-pwa 設定
+├── tailwind.config.js
 ├── tsconfig.json
 ├── package.json
 └── README.md

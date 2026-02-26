@@ -1,0 +1,154 @@
+<mxfile host="app.diagrams.net" modified="2026-02-26T00:00:00.000Z" type="device">
+  <diagram id="workbox" name="Workbox キャッシュ戦略">
+    <mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== Title ===== -->
+        <mxCell id="title" value="Workbox キャッシュ戦略 — Service Worker がリクエストをどう処理するか" style="text;html=1;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="100" y="10" width="1000" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ===== React App ===== -->
+        <mxCell id="app" value="&lt;b&gt;React アプリ&lt;/b&gt;&lt;br&gt;fetch() リクエスト送信" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="440" y="50" width="280" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Service Worker Banner ===== -->
+        <mxCell id="sw-banner" value="&lt;b&gt;Service Worker (Workbox) がすべての fetch リクエストをインターセプト&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f0f0;strokeColor=#999999;fontSize=12;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="140" width="900" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow: App → SW -->
+        <mxCell id="e-app-sw" value="" style="endArrow=classic;html=1;strokeColor=#999999;strokeWidth=2;" edge="1" source="app" target="sw-banner" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===== URL Pattern Label ===== -->
+        <mxCell id="url-label" value="URL パターンマッチング（workbox-routing）" style="text;html=1;fontSize=11;fontStyle=2;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="350" y="185" width="500" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Strategy Columns ===== -->
+
+        <!-- ── Column 1: Precache (Built Assets) ── -->
+        <mxCell id="pat1" value="&lt;b&gt;*.js, *.css, *.html&lt;/b&gt;&lt;br&gt;&lt;b&gt;*.svg, *.png&lt;/b&gt;&lt;br&gt;(ビルド成果物)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6ffed;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="215" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="str1" value="&lt;b&gt;Precache&lt;/b&gt;&lt;br&gt;(プリキャッシュ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="30" y="305" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="desc1" value="SW インストール時に&lt;br&gt;&lt;b&gt;全アセットをキャッシュ済み&lt;/b&gt;&lt;br&gt;&lt;br&gt;→ リクエスト時は&lt;br&gt;キャッシュから即座に返却&lt;br&gt;（ネットワーク不要）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9fff9;strokeColor=#82b366;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="385" width="190" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="e1a" value="" style="endArrow=classic;html=1;strokeColor=#82b366;" edge="1" source="sw-banner" target="pat1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1b" value="" style="endArrow=classic;html=1;strokeColor=#82b366;" edge="1" source="pat1" target="str1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1c" value="" style="endArrow=classic;html=1;strokeColor=#82b366;" edge="1" source="str1" target="desc1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ── Column 2: NetworkOnly (Google API) ── -->
+        <mxCell id="pat2" value="&lt;b&gt;googleapis.com/*&lt;/b&gt;&lt;br&gt;(Sheets API / Drive API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="260" y="215" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="str2" value="&lt;b&gt;NetworkOnly&lt;/b&gt;&lt;br&gt;(ネットワークのみ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="260" y="305" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="desc2" value="&lt;b&gt;常にネットワークから取得&lt;/b&gt;&lt;br&gt;&lt;br&gt;キャッシュしない&lt;br&gt;（データの鮮度が最重要）&lt;br&gt;&lt;br&gt;オフライン時は失敗" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff5f5;strokeColor=#b85450;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="385" width="190" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="e2a" value="" style="endArrow=classic;html=1;strokeColor=#b85450;" edge="1" source="sw-banner" target="pat2" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2b" value="" style="endArrow=classic;html=1;strokeColor=#b85450;" edge="1" source="pat2" target="str2" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2c" value="" style="endArrow=classic;html=1;strokeColor=#b85450;" edge="1" source="str2" target="desc2" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ── Column 3: StaleWhileRevalidate (Drive Images) ── -->
+        <mxCell id="pat3" value="&lt;b&gt;googleusercontent.com/*&lt;/b&gt;&lt;br&gt;(Drive サムネイル画像)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="490" y="215" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="str3" value="&lt;b&gt;StaleWhileRevalidate&lt;/b&gt;&lt;br&gt;(キャッシュ優先+裏で更新)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="490" y="305" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="desc3" value="① キャッシュがあれば&lt;br&gt;&lt;b&gt;即座にキャッシュを返却&lt;/b&gt;&lt;br&gt;&lt;br&gt;② 同時にバックグラウンドで&lt;br&gt;ネットワークから最新版を取得&lt;br&gt;→ キャッシュを更新&lt;br&gt;&lt;br&gt;上限: 200件 / 7日間" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffef5;strokeColor=#d6b656;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="490" y="385" width="190" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="e3a" value="" style="endArrow=classic;html=1;strokeColor=#d6b656;" edge="1" source="sw-banner" target="pat3" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3b" value="" style="endArrow=classic;html=1;strokeColor=#d6b656;" edge="1" source="pat3" target="str3" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3c" value="" style="endArrow=classic;html=1;strokeColor=#d6b656;" edge="1" source="str3" target="desc3" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ── Column 4: NetworkFirst (Weather API) ── -->
+        <mxCell id="pat4" value="&lt;b&gt;api.open-meteo.com/*&lt;/b&gt;&lt;br&gt;(天気予報 API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="720" y="215" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="str4" value="&lt;b&gt;NetworkFirst&lt;/b&gt;&lt;br&gt;(ネットワーク優先)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="720" y="305" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="desc4" value="① まずネットワークから取得&lt;br&gt;（タイムアウト: 10秒）&lt;br&gt;&lt;br&gt;② 成功 → レスポンスを返却&lt;br&gt;+ キャッシュを更新&lt;br&gt;&lt;br&gt;③ 失敗 → &lt;b&gt;キャッシュから返却&lt;/b&gt;&lt;br&gt;&lt;br&gt;上限: 30件 / 6時間" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f8ff;strokeColor=#6c8ebf;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="720" y="385" width="190" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="e4a" value="" style="endArrow=classic;html=1;strokeColor=#6c8ebf;" edge="1" source="sw-banner" target="pat4" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4b" value="" style="endArrow=classic;html=1;strokeColor=#6c8ebf;" edge="1" source="pat4" target="str4" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4c" value="" style="endArrow=classic;html=1;strokeColor=#6c8ebf;" edge="1" source="str4" target="desc4" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ── Column 5: NavigateFallback (SPA) ── -->
+        <mxCell id="pat5" value="&lt;b&gt;ページ遷移&lt;/b&gt;&lt;br&gt;(ナビゲーションリクエスト)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede7f6;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="950" y="215" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="str5" value="&lt;b&gt;navigateFallback&lt;/b&gt;&lt;br&gt;(SPA フォールバック)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="950" y="305" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="desc5" value="プリキャッシュ済みの&lt;br&gt;&lt;b&gt;index.html を返却&lt;/b&gt;&lt;br&gt;&lt;br&gt;SPA なのでどの URL でも&lt;br&gt;同じ index.html → React&lt;br&gt;Router がルーティング" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8f5ff;strokeColor=#9673a6;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="950" y="385" width="190" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="e5a" value="" style="endArrow=classic;html=1;strokeColor=#9673a6;" edge="1" source="sw-banner" target="pat5" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5b" value="" style="endArrow=classic;html=1;strokeColor=#9673a6;" edge="1" source="pat5" target="str5" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5c" value="" style="endArrow=classic;html=1;strokeColor=#9673a6;" edge="1" source="str5" target="desc5" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Bottom: Legend ===== -->
+        <mxCell id="legend" value="&lt;b&gt;Workbox とは？&lt;/b&gt;&lt;br&gt;Google 製の Service Worker ライブラリ。手書きで fetch イベントリスナーやキャッシュ管理コードを書く代わりに、&lt;br&gt;「この URL パターンには、この戦略を使う」と宣言的に設定するだけで、上記のキャッシュ処理を自動化してくれる。&lt;br&gt;&lt;br&gt;&lt;b&gt;vite-plugin-pwa&lt;/b&gt; 経由で使うことで、ビルド成果物のプリキャッシュリストも自動生成される（手動更新不要）。" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontSize=11;align=left;spacingLeft=10;spacingRight=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="560" width="1110" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Bottom: Network / Cache indicators ===== -->
+        <mxCell id="network-icon" value="🌐 ネットワーク" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="670" width="140" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="cache-icon" value="💾 キャッシュ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="190" y="670" width="140" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="both-icon" value="🔄 両方" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="670" width="140" height="35" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

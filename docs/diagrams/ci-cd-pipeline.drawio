@@ -1,0 +1,122 @@
+<mxfile host="app.diagrams.net" modified="2026-02-26T00:00:00.000Z" type="device">
+  <diagram id="cicd" name="CI/CD パイプライン">
+    <mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== Title ===== -->
+        <mxCell id="title" value="niwalog CI/CD パイプライン" style="text;html=1;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="330" y="10" width="500" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Row 1: PR / Push Workflow ===== -->
+        <mxCell id="row1-label" value="&lt;b&gt;PR / Push ワークフロー&lt;/b&gt;&lt;br&gt;(.github/workflows/ci.yml)" style="text;html=1;fontSize=12;align=left;verticalAlign=middle;whiteSpace=wrap;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="20" y="60" width="220" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Trigger -->
+        <mxCell id="trigger1" value="&lt;b&gt;トリガー&lt;/b&gt;&lt;br&gt;PR → main/dev&lt;br&gt;push → dev" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="20" y="110" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- CI Job Container -->
+        <mxCell id="ci-job" value="&lt;b&gt;ci ジョブ&lt;/b&gt; (ubuntu-latest, Node 22)" style="rounded=1;whiteSpace=wrap;html=1;container=1;collapsible=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;verticalAlign=top;spacingTop=5;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="190" y="90" width="640" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step-lint" value="&lt;b&gt;1. Lint&lt;/b&gt;&lt;br&gt;ESLint" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="ci-job">
+          <mxGeometry x="15" y="35" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="step-type" value="&lt;b&gt;2. Typecheck&lt;/b&gt;&lt;br&gt;tsc --noEmit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="ci-job">
+          <mxGeometry x="170" y="35" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="step-test" value="&lt;b&gt;3. Test&lt;/b&gt;&lt;br&gt;Vitest (76テスト)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="ci-job">
+          <mxGeometry x="325" y="35" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="step-build" value="&lt;b&gt;4. Build&lt;/b&gt;&lt;br&gt;Vite build" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="ci-job">
+          <mxGeometry x="480" y="35" width="130" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows within CI job -->
+        <mxCell id="ci-e1" value="" style="endArrow=classic;html=1;strokeColor=#6c8ebf;" edge="1" source="step-lint" target="step-type" parent="ci-job">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ci-e2" value="" style="endArrow=classic;html=1;strokeColor=#6c8ebf;" edge="1" source="step-type" target="step-test" parent="ci-job">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ci-e3" value="" style="endArrow=classic;html=1;strokeColor=#6c8ebf;" edge="1" source="step-test" target="step-build" parent="ci-job">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Trigger → CI Job -->
+        <mxCell id="e-t1-ci" value="" style="endArrow=classic;html=1;strokeColor=#9673a6;strokeWidth=2;" edge="1" source="trigger1" target="ci-job" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Lighthouse Job -->
+        <mxCell id="lh-job" value="&lt;b&gt;lighthouse ジョブ&lt;/b&gt;&lt;br&gt;(needs: ci)" style="rounded=1;whiteSpace=wrap;html=1;container=1;collapsible=0;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;verticalAlign=top;spacingTop=5;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="870" y="90" width="270" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="lh-audit" value="&lt;b&gt;Lighthouse CI&lt;/b&gt;&lt;br&gt;Performance ≥ 80&lt;br&gt;Accessibility ≥ 90&lt;br&gt;Best Practices ≥ 80&lt;br&gt;SEO ≥ 80" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="lh-job">
+          <mxGeometry x="15" y="30" width="240" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- CI Job → Lighthouse -->
+        <mxCell id="e-ci-lh" value="成功後" style="endArrow=classic;html=1;strokeColor=#d6b656;strokeWidth=2;fontSize=10;fontColor=#d6b656;" edge="1" source="ci-job" target="lh-job" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===== CI Result ===== -->
+        <mxCell id="ci-result" value="&lt;b&gt;✓ PR マージ可能&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="940" y="230" width="170" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="e-lh-result" value="" style="endArrow=classic;html=1;strokeColor=#82b366;strokeWidth=2;" edge="1" source="lh-job" target="ci-result" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Separator ===== -->
+        <mxCell id="sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=10;rotatable=0;labelPosition=left;points=[];portConstraint=eastwest;strokeColor=#cccccc;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="300" width="1120" height="10" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Row 2: Deploy Workflow ===== -->
+        <mxCell id="row2-label" value="&lt;b&gt;デプロイワークフロー&lt;/b&gt;&lt;br&gt;(.github/workflows/deploy.yml)" style="text;html=1;fontSize=12;align=left;verticalAlign=middle;whiteSpace=wrap;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="20" y="320" width="250" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Trigger 2 -->
+        <mxCell id="trigger2" value="&lt;b&gt;トリガー&lt;/b&gt;&lt;br&gt;push → main" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="20" y="375" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Deploy steps -->
+        <mxCell id="deploy-build" value="&lt;b&gt;Build&lt;/b&gt;&lt;br&gt;tsc + Vite build&lt;br&gt;+ Workbox SW 生成" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="370" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="deploy-upload" value="&lt;b&gt;Upload Artifact&lt;/b&gt;&lt;br&gt;dist/ をアーティファクトとして保存" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="450" y="370" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="deploy-pages" value="&lt;b&gt;Deploy&lt;/b&gt;&lt;br&gt;GitHub Pages へデプロイ&lt;br&gt;→ https://masayuki-honda&lt;br&gt;.github.io/niwalog/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="365" width="230" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows for deploy -->
+        <mxCell id="e-t2-build" value="" style="endArrow=classic;html=1;strokeColor=#9673a6;strokeWidth=2;" edge="1" source="trigger2" target="deploy-build" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-build-upload" value="" style="endArrow=classic;html=1;strokeColor=#6c8ebf;strokeWidth=2;" edge="1" source="deploy-build" target="deploy-upload" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-upload-pages" value="" style="endArrow=classic;html=1;strokeColor=#82b366;strokeWidth=2;" edge="1" source="deploy-upload" target="deploy-pages" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Flow description ===== -->
+        <mxCell id="flow-note" value="&lt;b&gt;開発フロー:&lt;/b&gt; 機能ブランチ → dev へ PR (CI 検証) → main へマージ (自動デプロイ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="20" y="480" width="930" height="35" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

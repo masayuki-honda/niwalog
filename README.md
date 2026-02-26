@@ -26,11 +26,14 @@
 
 | レイヤー | 技術 |
 |----------|------|
-| フロントエンド | Vite + React 19 + TypeScript |
-| UI | Tailwind CSS + shadcn/ui |
+| フロントエンド | Vite 7 + React 19 + TypeScript |
+| UI | Tailwind CSS |
 | ルーティング | React Router v7 |
 | 状態管理 | Zustand |
 | グラフ | Recharts |
+| PWA | vite-plugin-pwa（Workbox） |
+| テスト | Vitest + React Testing Library |
+| CI/CD | GitHub Actions（Lint / Typecheck / Test / Build / Lighthouse CI） |
 | 認証 | Google Identity Services (OAuth 2.0) |
 | DB | Google Sheets API v4 |
 | 画像保存 | Google Drive API v3 |
@@ -59,7 +62,7 @@
 
 ### 前提条件
 
-- Node.js 20 以上
+- Node.js 22 以上
 - Google Cloud Platform プロジェクト（Sheets API / Drive API 有効化済み）
 - Google スプレッドシート（6 シート作成済み）
 
@@ -83,6 +86,15 @@ npm run dev
 npm run build
 ```
 
+### テスト
+
+```bash
+npm run test          # テスト実行
+npm run test:watch    # ウォッチモード
+npm run test:coverage # カバレッジ付き
+npm run typecheck     # 型チェック
+```
+
 ### プレビュー
 
 ```bash
@@ -97,23 +109,26 @@ npm run preview
 4. **GAS** — 気象データ取得トリガー設定、土壌センサ受信 Web App デプロイ
 5. **GitHub Pages** — Settings → Pages → Source: GitHub Actions に設定
 
-詳細は [docs/specification.md](docs/specification.md) を参照してください。
+詳細は [docs/design-specification.md](docs/design-specification.md) を参照してください。
 セットアップの具体的な手順は [docs/setup-guide.md](docs/setup-guide.md) を参照してください。
 
 ## ディレクトリ構成
 
 ```
 niwalog/
-├── .github/workflows/    # GitHub Actions デプロイ設定
-├── docs/                 # 仕様書
+├── .github/workflows/    # GitHub Actions（CI + デプロイ）
+├── docs/
+│   ├── diagrams/         # 構成図（drawio）
+│   └── *.md              # 仕様書・ガイド
 ├── gas/                  # GAS スクリプト
-├── public/               # 静的ファイル
+├── public/               # 静的ファイル（アイコン等）
 ├── src/
 │   ├── components/       # React コンポーネント
 │   ├── constants/        # 定数
 │   ├── pages/            # ページコンポーネント
 │   ├── services/         # API サービス
 │   ├── stores/           # Zustand ストア
+│   ├── test/             # テストセットアップ・ユーティリティ
 │   ├── types/            # TypeScript 型定義
 │   └── utils/            # ユーティリティ
 ├── index.html

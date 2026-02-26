@@ -2,7 +2,7 @@
 
 **バージョン:** 3.0
 **作成日:** 2026年2月20日
-**最終更新:** 2026年2月25日（Phase 5 改善・追加完了）
+**最終更新:** 2026年2月26日（Phase A/B/C 改善完了反映）
 **ステータス:** 確定
 **対応設計仕様書:** design-specification.md v3.0
 
@@ -43,8 +43,17 @@
 **vite.config.ts 概要:**
 
 ```typescript
+import { VitePWA } from 'vite-plugin-pwa'
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'prompt',
+      manifest: { /* PWAマニフェスト */ },
+      workbox: { /* キャッシュ戦略 */ },
+    }),
+  ],
   base: '/niwalog/',   // GitHub Pages サブパス
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
@@ -86,9 +95,14 @@ export default defineConfig({
 |-----------|------|
 | `typescript` ~5.9.3 | 型チェック |
 | `@vitejs/plugin-react` | Vite React プラグイン |
+| `vite-plugin-pwa` | PWA / Workbox 統合（SW自動生成・マニフェスト生成） |
 | `tailwindcss` ^3.4.17 | ユーティリティCSS |
 | `postcss` / `autoprefixer` | CSS後処理 |
 | `eslint` + 各プラグイン | Lint |
+| `vitest` | テストランナー |
+| `@testing-library/react` / `jest-dom` / `user-event` | React コンポーネントテスト |
+| `jsdom` | テスト用ブラウザ環境 |
+| `@lhci/cli` | Lighthouse CI（パフォーマンス監視） |
 
 ### 2.3 外部スクリプト（`index.html` 経由で動的ロード）
 
@@ -125,6 +139,10 @@ src/
 │
 ├── components/
 │   ├── DriveImage.tsx          # Google Drive 画像表示コンポーネント
+│   ├── ReloadPrompt.tsx        # SW更新通知UI（vite-plugin-pwa）
+│   ├── Skeleton.tsx            # スケルトンローディング
+│   ├── Toast.tsx               # Toast通知
+│   ├── __tests__/              # コンポーネントテスト
 │   └── layout/
 │       ├── AppLayout.tsx       # ヘッダー + サイドバー/ボトムナビ のラッパー
 │       ├── Header.tsx          # ページ上部ヘッダー
@@ -134,10 +152,17 @@ src/
 ├── services/                   # 外部API通信（副作用のある処理はここに集約）
 │   ├── google-auth.ts          # GAPI/GIS 初期化・トークン管理
 │   ├── sheets-api.ts           # Sheets API ラッパー（weather/soil取得含む）
-│   └── drive-api.ts            # Drive API ラッパー
+│   ├── drive-api.ts            # Drive API ラッパー
+│   └── weather-forecast.ts     # 天気予報API
 │
 ├── stores/
-│   └── app-store.ts            # Zustand グローバルストア
+│   ├── app-store.ts            # Zustand グローバルストア
+│   ├── toast-store.ts          # Toast通知ストア
+│   └── __tests__/              # ストアテスト
+│
+├── test/                       # テストセットアップ
+│   ├── setup.ts                # テスト環境セットアップ（matchMedia / crypto モック）
+│   └── test-utils.tsx          # カスタムrender（BrowserRouterプロバイダー付き）
 │
 ├── types/
 │   ├── index.ts                # アプリ共通型定義
@@ -151,7 +176,8 @@ src/
     ├── auth-retry.ts           # 401時トークンリフレッシュ + リトライ
     ├── image-compressor.ts     # 画像圧縮
     ├── date-imports.ts         # date-fns / date-fns-tz の re-export
-    └── correlation.ts          # 統計ユーティリティ（ピアソン相関係数、GDD計算）
+    ├── correlation.ts          # 統計ユーティリティ（ピアソン相関係数、GDD計算）
+    └── __tests__/              # ユーティリティテスト
 ```
 
 ---
@@ -878,13 +904,45 @@ try {
 
 ```bash
 npm install
-npm run dev       # http://localhost:5173/niwalog/
-npm run build     # dist/ に静的ファイルを生成
-npm run preview   # dist/ をローカルでプレビュー
-npm run lint      # ESLint チェック
+npm run dev           # http://localhost:5173/niwalog/
+npm run build         # dist/ に静的ファイルを生成
+npm run preview       # dist/ をローカルでプレビュー
+npm run lint          # ESLint チェック
+npm run typecheck     # TypeScript 型チェック
+npm run test          # Vitest テスト実行
+npm run test:watch    # テストウォッチモード
+npm run test:coverage # カバレッジ付きテスト
 ```
 
-### 15.2 GitHub Pages デプロイ
+### 15.2 CI パイプライン（PR / Push）
+
+`.github/workflows/ci.yml` により PR 時・dev push 時に自動実行:
+
+```
+PR → main/dev または push → dev
+  └── GitHub Actions (ci ジョブ)
+        ├── actions/checkout
+        ├── actions/setup-node (Node.js 22)
+        ├── npm ci
+        ├── npm run lint          # ESLint
+        ├── npm run typecheck     # tsc --noEmit
+        ├── npm run test          # Vitest (76テスト)
+        └── npm run build         # ビルド確認
+  └── GitHub Actions (lighthouse ジョブ, needs: ci)
+        ├── npm ci
+        ├── npm run build
+        └── lhci autorun          # Lighthouse CI スコアチェック
+```
+
+**Lighthouse CI 閾値（lighthouserc.json）:**
+| カテゴリ | 閾値 | レベル |
+|---|---|---|
+| Performance | ≥ 0.8 | warn |
+| Accessibility | ≥ 0.9 | error |
+| Best Practices | ≥ 0.8 | warn |
+| SEO | ≥ 0.8 | warn |
+
+### 15.3 GitHub Pages デプロイ
 
 `.github/workflows/deploy.yml` により `main` ブランチへの push で自動デプロイ:
 
@@ -892,7 +950,7 @@ npm run lint      # ESLint チェック
 push → main
   └── GitHub Actions
         ├── actions/checkout
-        ├── actions/setup-node (Node.js 20)
+        ├── actions/setup-node (Node.js 22)
         ├── npm ci
         ├── npm run build
         └── actions/deploy-pages (dist/ を公開)
@@ -900,23 +958,29 @@ push → main
 
 **公開URL:** `https://{username}.github.io/niwalog/`
 
-### 15.3 SPA フォールバック
+### 15.4 SPA フォールバック
 
 GitHub Pages は SPA のディープリンクに対応しないため、`public/404.html` を配置:
 
 - 404リクエストを `index.html` の内容で返し、React Router が処理する。
 - `index.html` と `404.html` の内容を同一にするか、リダイレクト用スクリプトを埋め込む。
 
-### 15.4 ビルド成果物
+### 15.5 ビルド成果物
 
 ```
 dist/
 ├── index.html
 ├── 404.html
+├── manifest.webmanifest  # PWAマニフェスト（vite-plugin-pwa 自動生成）
+├── sw.js                 # Service Worker（Workbox 自動生成）
+├── workbox-[hash].js     # Workbox ランタイム
+├── icons/
+│   ├── icon-192.svg
+│   └── icon-512.svg
 ├── assets/
 │   ├── index-[hash].js   # バンドル済みJS
 │   └── index-[hash].css  # バンドル済みCSS
-└── (public/ 配下のファイル)
+└── vite.svg
 ```
 
 ---
