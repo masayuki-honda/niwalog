@@ -4,6 +4,7 @@ import { useAppStore } from '@/stores/app-store';
 import { loadGapiClient, loadGisClient, verifyAccessToken, setGapiAccessToken, refreshAccessToken } from '@/services/google-auth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Login } from '@/pages/Login';
+import { ReloadPrompt } from '@/components/ReloadPrompt';
 
 // Lazy-loaded pages for code splitting
 const Dashboard = lazy(() => import('@/pages/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -109,28 +110,31 @@ export default function App() {
   useRestoreSession();
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Suspense fallback={<PageLoading />}><Dashboard /></Suspense>} />
-        <Route path="planters" element={<Suspense fallback={<PageLoading />}><PlanterList /></Suspense>} />
-        <Route path="planters/:id" element={<Suspense fallback={<PageLoading />}><PlanterDetail /></Suspense>} />
-        <Route path="activities/new" element={<Suspense fallback={<PageLoading />}><ActivityForm /></Suspense>} />
-        <Route path="calendar" element={<Suspense fallback={<PageLoading />}><Calendar /></Suspense>} />
-        <Route path="weather" element={<Suspense fallback={<PageLoading />}><Weather /></Suspense>} />
-        <Route path="soil-sensor" element={<Suspense fallback={<PageLoading />}><SoilSensor /></Suspense>} />
-        <Route path="analytics" element={<Suspense fallback={<PageLoading />}><Analytics /></Suspense>} />
-        <Route path="review" element={<Suspense fallback={<PageLoading />}><Review /></Suspense>} />
-        <Route path="photos" element={<Suspense fallback={<PageLoading />}><PhotoGallery /></Suspense>} />
-        <Route path="settings" element={<Suspense fallback={<PageLoading />}><Settings /></Suspense>} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Suspense fallback={<PageLoading />}><Dashboard /></Suspense>} />
+          <Route path="planters" element={<Suspense fallback={<PageLoading />}><PlanterList /></Suspense>} />
+          <Route path="planters/:id" element={<Suspense fallback={<PageLoading />}><PlanterDetail /></Suspense>} />
+          <Route path="activities/new" element={<Suspense fallback={<PageLoading />}><ActivityForm /></Suspense>} />
+          <Route path="calendar" element={<Suspense fallback={<PageLoading />}><Calendar /></Suspense>} />
+          <Route path="weather" element={<Suspense fallback={<PageLoading />}><Weather /></Suspense>} />
+          <Route path="soil-sensor" element={<Suspense fallback={<PageLoading />}><SoilSensor /></Suspense>} />
+          <Route path="analytics" element={<Suspense fallback={<PageLoading />}><Analytics /></Suspense>} />
+          <Route path="review" element={<Suspense fallback={<PageLoading />}><Review /></Suspense>} />
+          <Route path="photos" element={<Suspense fallback={<PageLoading />}><PhotoGallery /></Suspense>} />
+          <Route path="settings" element={<Suspense fallback={<PageLoading />}><Settings /></Suspense>} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <ReloadPrompt />
+    </>
   );
 }

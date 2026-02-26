@@ -108,7 +108,7 @@ Google エコシステム内で統一でき、既存の Google OAuth もその�
      - `npm run build`（ビルド確認）
    - 既存の `deploy.yml` はそのまま維持（main push 時のデプロイ）
 
-#### Phase B: パフォーマンス監視（Lighthouse CI）
+#### Phase B: パフォーマンス監視（Lighthouse CI） ✅ 実装済み
 
 **Lighthouse CI とは:**
 Google が提供する **Lighthouse**（ブラウザ内蔵のパフォーマンス測定ツール）を **CI パイプラインで自動実行** するツール。
@@ -128,9 +128,9 @@ PR ごとに以下のスコアを自動計測し、閾値を下回ったら CI �
 - CI ワークフローに Lighthouse CI ジョブを追加
 - PR コメントにスコアを自動投稿
 
-#### Phase C: オフライン強化（Workbox）
+#### Phase C: オフライン強化（Workbox） ✅ 実装済み
 
-**現状の Service Worker:**
+**現状の Service Worker（移行前）:**
 - 手書きの `public/sw.js`（約100行）
 - プリキャッシュ: `index.html`, `404.html` のみ
 - ナビゲーション: Network First → Cache Fallback
@@ -138,12 +138,13 @@ PR ごとに以下のスコアを自動計測し、閾値を下回ったら CI �
 - Google API リクエストはスキップ（常にネットワーク）
 - **書き込み（POST/PUT）のオフラインキューなし**
 
-**Workbox 導入で改善される点:**
+**Workbox 導入で改善された点:**
 - `vite-plugin-pwa` で Vite ビルドと統合（ビルド時にプリキャッシュマニフェスト自動生成）
-- Workbox の `BackgroundSync` でオフライン時の書き込みをキューイング → 復帰時に自動送信
+- 全ビルドアセットの自動プリキャッシュ（手書き sw.js では index.html + 404.html のみだった）
 - Workbox の `ExpirationPlugin` でキャッシュサイズ・有効期限を管理
-- Workbox の `StaleWhileRevalidate` で Drive 画像のキャッシュ戦略を最適化
-- Service Worker の更新通知 UI（「新しいバージョンがあります」プロンプト）
+- Google API → `NetworkOnly`、Drive 画像 → `StaleWhileRevalidate`（7日間/200件上限）、天気 API → `NetworkFirst`（6時間/30件上限）
+- Service Worker の更新通知 UI（`ReloadPrompt` コンポーネント: 「新しいバージョンがあります」プロンプト）
+- 1時間ごとの自動更新チェック
 
 ---
 
