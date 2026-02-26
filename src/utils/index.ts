@@ -10,7 +10,8 @@ export function formatDate(dateStr: string, fmt?: string): string {
 
 export function daysSince(dateStr: string): number {
   try {
-    return differenceInDays(new Date(), parseISO(dateStr));
+    const result = differenceInDays(new Date(), parseISO(dateStr));
+    return Number.isNaN(result) ? 0 : result;
   } catch {
     return 0;
   }

@@ -9,7 +9,7 @@ export default defineConfig([
   globalIgnores(['dist']),
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  ...reactHooks.configs.flat.recommended,
+  reactHooks.configs['flat/recommended'],
   reactRefresh.configs.vite,
   {
     files: ['**/*.{ts,tsx}'],
