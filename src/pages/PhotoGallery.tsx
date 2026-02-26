@@ -112,7 +112,7 @@ export function PhotoGallery() {
   );
   const nextPhoto = useCallback(
     () => setLightboxIndex((i) => (i !== null && i < photos.length - 1 ? i + 1 : i)),
-    [],
+    [photos.length],
   );
 
   /* ---------- compare helpers ---------- */

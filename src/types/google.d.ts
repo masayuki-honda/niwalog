@@ -1,4 +1,3 @@
-/* eslint-disable */
 // Minimal type declarations for Google Identity Services and GAPI
 // These are loaded via script tags at runtime
 

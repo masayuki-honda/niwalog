@@ -9,7 +9,15 @@ export default defineConfig([
   globalIgnores(['dist']),
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  reactHooks.configs['flat/recommended'],
+  {
+    plugins: {
+      'react-hooks': reactHooks,
+    },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
+  },
   reactRefresh.configs.vite,
   {
     files: ['**/*.{ts,tsx}'],

@@ -77,7 +77,7 @@ export function ActivityForm() {
 
     setSaving(true);
     try {
-      let photoIds: string[] = [];
+      const photoIds: string[] = [];
 
       // Upload photos if any
       if (photos.length > 0) {
