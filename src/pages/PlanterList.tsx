@@ -5,6 +5,7 @@ import { useAppStore } from '@/stores/app-store';
 import { addPlanter as addPlanterToSheet } from '@/services/sheets-api';
 import { withAuthRetry } from '@/utils/auth-retry';
 import { generateId, nowISO, cn, daysSince } from '@/utils';
+import { toast } from '@/stores/toast-store';
 import type { Planter } from '@/types';
 
 export function PlanterList() {
@@ -67,6 +68,7 @@ export function PlanterList() {
 
       await withAuthRetry((token) => addPlanterToSheet(spreadsheetId, row, token));
       addPlanter(planter);
+      toast.success(`${planter.cropName} を追加しました`);
 
       // Reset form
       setName('');
@@ -77,7 +79,9 @@ export function PlanterList() {
       setMemo('');
       setShowForm(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '保存に失敗しました');
+      const msg = err instanceof Error ? err.message : '保存に失敗しました';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

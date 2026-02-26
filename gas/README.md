@@ -24,6 +24,20 @@ HomeGardenDiary のバックグラウンドデータ収集を担当する GAS �
 - `SPREADSHEET_ID` — スプレッドシートのID
 - `LATITUDE` / `LONGITUDE` — 気象データ取得地点の緯度・経度
 - `TIMEZONE` — タイムゾーン（デフォルト: `Asia/Tokyo`）
+- `OPEN_METEO_API_KEY` — （任意）Open-Meteo API キー。設定するとレート制限が緩和される
+
+**Open-Meteo API キーの取得（推奨）:**
+
+GAS はトリガー実行時に Google の共有サーバー IP を使うため、無料枠の IP ベースレート制限に引っかかりやすくなっています。
+無料の API キーを取得して設定すると、この問題を回避できます。
+
+1. https://open-meteo.com/en/pricing にアクセス
+2. 「API Key」→「Sign Up」でアカウント作成（無料）
+3. ダッシュボードで API キーをコピー
+4. `weather-fetcher.gs` の `OPEN_METEO_API_KEY` に設定
+
+> API キーなしでも使えますが、429 エラーが繰り返される場合はキーの設定を推奨します。
+> スクリプトは 429 エラー時に自動リトライ（最大3回、指数バックオフ）を行います。
 
 **soil-sensor-receiver.gs:**
 - `SS_ID` — スプレッドシートのID

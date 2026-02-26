@@ -1,20 +1,33 @@
-import { useEffect } from 'react';
+import { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from '@/stores/app-store';
 import { loadGapiClient, loadGisClient, verifyAccessToken, setGapiAccessToken, refreshAccessToken } from '@/services/google-auth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Login } from '@/pages/Login';
-import { Dashboard } from '@/pages/Dashboard';
-import { PlanterList } from '@/pages/PlanterList';
-import { PlanterDetail } from '@/pages/PlanterDetail';
-import { ActivityForm } from '@/pages/ActivityForm';
-import { Calendar } from '@/pages/Calendar';
-import { Weather } from '@/pages/Weather';
-import { SoilSensor } from '@/pages/SoilSensor';
-import { Analytics } from '@/pages/Analytics';
-import { Review } from '@/pages/Review';
-import { PhotoGallery } from '@/pages/PhotoGallery';
-import { Settings } from '@/pages/Settings';
+
+// Lazy-loaded pages for code splitting
+const Dashboard = lazy(() => import('@/pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const PlanterList = lazy(() => import('@/pages/PlanterList').then(m => ({ default: m.PlanterList })));
+const PlanterDetail = lazy(() => import('@/pages/PlanterDetail').then(m => ({ default: m.PlanterDetail })));
+const ActivityForm = lazy(() => import('@/pages/ActivityForm').then(m => ({ default: m.ActivityForm })));
+const Calendar = lazy(() => import('@/pages/Calendar').then(m => ({ default: m.Calendar })));
+const Weather = lazy(() => import('@/pages/Weather').then(m => ({ default: m.Weather })));
+const SoilSensor = lazy(() => import('@/pages/SoilSensor').then(m => ({ default: m.SoilSensor })));
+const Analytics = lazy(() => import('@/pages/Analytics').then(m => ({ default: m.Analytics })));
+const Review = lazy(() => import('@/pages/Review').then(m => ({ default: m.Review })));
+const PhotoGallery = lazy(() => import('@/pages/PhotoGallery').then(m => ({ default: m.PhotoGallery })));
+const Settings = lazy(() => import('@/pages/Settings').then(m => ({ default: m.Settings })));
+
+function PageLoading() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-center">
+        <div className="inline-block w-8 h-8 border-4 border-garden-200 border-t-garden-600 rounded-full animate-spin" />
+        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">読み込み中...</p>
+      </div>
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = useAppStore((s) => s.user);
@@ -105,17 +118,17 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
-        <Route path="planters" element={<PlanterList />} />
-        <Route path="planters/:id" element={<PlanterDetail />} />
-        <Route path="activities/new" element={<ActivityForm />} />
-        <Route path="calendar" element={<Calendar />} />
-        <Route path="weather" element={<Weather />} />
-        <Route path="soil-sensor" element={<SoilSensor />} />
-        <Route path="analytics" element={<Analytics />} />
-        <Route path="review" element={<Review />} />
-        <Route path="photos" element={<PhotoGallery />} />
-        <Route path="settings" element={<Settings />} />
+        <Route index element={<Suspense fallback={<PageLoading />}><Dashboard /></Suspense>} />
+        <Route path="planters" element={<Suspense fallback={<PageLoading />}><PlanterList /></Suspense>} />
+        <Route path="planters/:id" element={<Suspense fallback={<PageLoading />}><PlanterDetail /></Suspense>} />
+        <Route path="activities/new" element={<Suspense fallback={<PageLoading />}><ActivityForm /></Suspense>} />
+        <Route path="calendar" element={<Suspense fallback={<PageLoading />}><Calendar /></Suspense>} />
+        <Route path="weather" element={<Suspense fallback={<PageLoading />}><Weather /></Suspense>} />
+        <Route path="soil-sensor" element={<Suspense fallback={<PageLoading />}><SoilSensor /></Suspense>} />
+        <Route path="analytics" element={<Suspense fallback={<PageLoading />}><Analytics /></Suspense>} />
+        <Route path="review" element={<Suspense fallback={<PageLoading />}><Review /></Suspense>} />
+        <Route path="photos" element={<Suspense fallback={<PageLoading />}><PhotoGallery /></Suspense>} />
+        <Route path="settings" element={<Suspense fallback={<PageLoading />}><Settings /></Suspense>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

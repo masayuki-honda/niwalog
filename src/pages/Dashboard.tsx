@@ -1,16 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, Droplets, Scissors, Sprout, ImageIcon, Thermometer, Sun, Cloud } from 'lucide-react';
+import { PlusCircle, Droplets, Scissors, Sprout, ImageIcon, Thermometer, Sun, Cloud, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { ACTIVITY_TYPE_CONFIG } from '@/constants';
 import { formatDate, daysSince } from '@/utils';
-import { getWeatherData } from '@/services/sheets-api';
+import { getWeatherData, getSettings } from '@/services/sheets-api';
+import { fetchWeatherForecast, generateWorkAdvices, weatherCodeToInfo, type WeatherForecast, type WorkAdvice } from '@/services/weather-forecast';
 import { withAuthRetry } from '@/utils/auth-retry';
+import { format, parseISO, ja } from '@/utils/date-imports';
 import type { WeatherData } from '@/types';
+
+interface SuggestedTask {
+  planterId: string;
+  cropName: string;
+  activityType: string;
+  emoji: string;
+  label: string;
+  reason: string;
+  daysSinceLast: number;
+}
 
 export function Dashboard() {
   const { planters, activities, spreadsheetId, user } = useAppStore();
   const [todayWeather, setTodayWeather] = useState<WeatherData | null>(null);
+  const [forecast, setForecast] = useState<WeatherForecast | null>(null);
+  const [workAdvices, setWorkAdvices] = useState<WorkAdvice[]>([]);
 
   const activePlanters = planters.filter((p) => p.status === 'active');
   const recentActivities = activities.slice(0, 5);
@@ -41,6 +55,23 @@ export function Dashboard() {
       });
   }, [user?.accessToken, spreadsheetId]);
 
+  // Fetch 7-day forecast + work advices
+  useEffect(() => {
+    if (!user?.accessToken || !spreadsheetId) return;
+    withAuthRetry((token) => getSettings(spreadsheetId, token))
+      .then(async (settings) => {
+        const lat = settings.latitude;
+        const lon = settings.longitude;
+        if (!lat || !lon) return;
+        const fc = await fetchWeatherForecast(lat, lon);
+        setForecast(fc);
+        setWorkAdvices(generateWorkAdvices(fc));
+      })
+      .catch(() => {
+        // Silently fail
+      });
+  }, [user?.accessToken, spreadsheetId]);
+
   // Harvest summary for current month
   const now = new Date();
   const currentMonthActivities = activities.filter((a) => {
@@ -65,6 +96,80 @@ export function Dashboard() {
       });
     }
   });
+
+  // ======= 今日やることリスト (F-future-02) =======
+  const suggestedTasks = useMemo<SuggestedTask[]>(() => {
+    if (activePlanters.length === 0) return [];
+    const tasks: SuggestedTask[] = [];
+    const today = new Date();
+
+    for (const p of activePlanters) {
+      const pActivities = activities.filter((a) => a.planterId === p.id);
+
+      // 水やりチェック: 最後の水やりから2日以上
+      const lastWatering = pActivities
+        .filter((a) => a.activityType === 'watering')
+        .sort((a, b) => b.activityDate.localeCompare(a.activityDate))[0];
+      const daysSinceWatering = lastWatering
+        ? Math.floor((today.getTime() - new Date(lastWatering.activityDate).getTime()) / 86400000)
+        : 999;
+      if (daysSinceWatering >= 2) {
+        tasks.push({
+          planterId: p.id,
+          cropName: p.cropName,
+          activityType: 'watering',
+          emoji: '💧',
+          label: '水やり',
+          reason: lastWatering ? `${daysSinceWatering}日前が最後` : '記録なし',
+          daysSinceLast: daysSinceWatering,
+        });
+      }
+
+      // 観察チェック: 最後の観察から7日以上
+      const lastObservation = pActivities
+        .filter((a) => a.activityType === 'observation')
+        .sort((a, b) => b.activityDate.localeCompare(a.activityDate))[0];
+      const daysSinceObs = lastObservation
+        ? Math.floor((today.getTime() - new Date(lastObservation.activityDate).getTime()) / 86400000)
+        : 999;
+      if (daysSinceObs >= 7) {
+        tasks.push({
+          planterId: p.id,
+          cropName: p.cropName,
+          activityType: 'observation',
+          emoji: '📸',
+          label: '観察',
+          reason: lastObservation ? `${daysSinceObs}日前が最後` : '記録なし',
+          daysSinceLast: daysSinceObs,
+        });
+      }
+
+      // 施肥チェック: 最後の施肥から14日以上
+      const lastFertilizing = pActivities
+        .filter((a) => a.activityType === 'fertilizing')
+        .sort((a, b) => b.activityDate.localeCompare(a.activityDate))[0];
+      const daysSinceFert = lastFertilizing
+        ? Math.floor((today.getTime() - new Date(lastFertilizing.activityDate).getTime()) / 86400000)
+        : 999;
+      if (daysSinceFert >= 14 && daysSinceFert < 999) {
+        tasks.push({
+          planterId: p.id,
+          cropName: p.cropName,
+          activityType: 'fertilizing',
+          emoji: '🧪',
+          label: '施肥',
+          reason: `${daysSinceFert}日前が最後`,
+          daysSinceLast: daysSinceFert,
+        });
+      }
+    }
+
+    // 緊急度でソート（日数長い順）
+    tasks.sort((a, b) => b.daysSinceLast - a.daysSinceLast);
+    return tasks.slice(0, 8);
+  }, [activePlanters, activities]);
+
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
 
   if (!spreadsheetId) {
     return (
@@ -130,6 +235,62 @@ export function Dashboard() {
         </Link>
       )}
 
+      {/* Work Advices from forecast */}
+      {workAdvices.length > 0 && (
+        <section className="space-y-2">
+          {workAdvices.map((advice, i) => (
+            <div
+              key={i}
+              className={`flex items-start gap-3 p-3 rounded-lg border text-sm ${
+                advice.priority === 'high'
+                  ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                  : advice.priority === 'medium'
+                    ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
+                    : 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
+              }`}
+            >
+              <span className="text-xl shrink-0">{advice.emoji}</span>
+              <div>
+                <p className="font-medium">{advice.title}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">{advice.description}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* 7-day Forecast */}
+      {forecast && forecast.days.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold text-gray-700 dark:text-gray-300 text-sm">7日間予報</h2>
+            <Link to="/weather" className="text-xs text-garden-600 dark:text-garden-400 hover:underline flex items-center gap-0.5">
+              詳細 <ChevronRight size={12} />
+            </Link>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {forecast.days.map((day) => {
+              const info = weatherCodeToInfo(day.weatherCode);
+              const dateObj = parseISO(day.date);
+              return (
+                <div
+                  key={day.date}
+                  className="flex flex-col items-center px-2.5 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 min-w-[64px] text-xs"
+                >
+                  <span className="text-gray-500">{format(dateObj, 'M/d(E)', { locale: ja })}</span>
+                  <span className="text-lg my-0.5">{info.emoji}</span>
+                  <span className="text-red-500 font-medium">{Math.round(day.tempMax)}°</span>
+                  <span className="text-blue-500">{Math.round(day.tempMin)}°</span>
+                  {day.precipitationProbability > 0 && (
+                    <span className="text-blue-400 mt-0.5">{day.precipitationProbability}%</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Quick actions */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         <Link
@@ -157,6 +318,59 @@ export function Dashboard() {
           <PlusCircle size={16} /> その他
         </Link>
       </div>
+
+      {/* 今日やること (F-future-02) */}
+      {suggestedTasks.length > 0 && (
+        <section>
+          <h2 className="font-bold text-gray-700 dark:text-gray-300 mb-2">
+            📋 今日やること
+          </h2>
+          <div className="space-y-1.5">
+            {suggestedTasks
+              .filter((t) => !completedTasks.has(`${t.planterId}-${t.activityType}`))
+              .map((task) => {
+                const taskKey = `${task.planterId}-${task.activityType}`;
+                return (
+                  <div
+                    key={taskKey}
+                    className="flex items-center gap-3 p-2.5 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700"
+                  >
+                    <button
+                      onClick={() => setCompletedTasks((prev) => new Set(prev).add(taskKey))}
+                      className="shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-garden-500 dark:hover:border-garden-400 flex items-center justify-center transition-colors"
+                      title="完了にする"
+                    >
+                    </button>
+                    <span className="text-lg shrink-0">{task.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">
+                        {task.cropName} — {task.label}
+                      </div>
+                      <div className="text-xs text-gray-500">{task.reason}</div>
+                    </div>
+                    <Link
+                      to={`/activities/new?planterId=${task.planterId}&type=${task.activityType}`}
+                      className="shrink-0 text-xs px-2.5 py-1 bg-garden-50 dark:bg-garden-900/30 text-garden-700 dark:text-garden-400 rounded-full hover:bg-garden-100 dark:hover:bg-garden-900/50"
+                    >
+                      記録
+                    </Link>
+                  </div>
+                );
+              })}
+            {suggestedTasks.length > 0 && completedTasks.size > 0 && completedTasks.size < suggestedTasks.length && (
+              <p className="text-xs text-gray-400 flex items-center gap-1">
+                <CheckCircle2 size={12} className="text-green-500" />
+                {completedTasks.size}件完了
+              </p>
+            )}
+            {completedTasks.size >= suggestedTasks.length && suggestedTasks.length > 0 && (
+              <p className="text-center text-sm text-green-600 dark:text-green-400 py-2">
+                🎉 全タスク完了！お疲れさまでした
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Recent Activities */}
       <section>
