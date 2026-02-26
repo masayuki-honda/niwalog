@@ -27,3 +27,15 @@
 - API 呼び出しは `withAuthRetry()` でラップする
 - date-fns の関数は `@/utils/date-imports` から import する（直接 `date-fns` から import しない）
 - UIの言語は日本語
+
+## ドキュメント保守ルール
+
+- コード変更（機能追加・修正・削除・設定変更など）を行った際は、関連する `.md` ファイルも同じコミット内で更新すること。
+- 対象ドキュメント: `README.md`, `docs/design-specification.md`, `docs/implementation-specification.md`, `docs/setup-guide.md` など。
+- 主な更新観点:
+  - ディレクトリ構成の変更（ファイル追加・削除・リネーム）
+  - 技術スタック・依存パッケージの追加・変更
+  - 設定ファイルの変更（vite.config.ts, tsconfig, eslint 等）
+  - ビルド・デプロイ手順の変更
+  - 新規コンポーネント・ページ・ユーティリティの追加
+- 仕様書（design-specification.md, implementation-specification.md）の「最終更新日」も更新すること。
