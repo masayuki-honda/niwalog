@@ -5,8 +5,8 @@
  * Google スプレッドシートの soil_sensor_data シートに書き込む。
  *
  * 使い方:
- * 1. このスクリプトを Google Apps Script エディタにコピー
- * 2. 下記の定数を設定
+ * 1. このスクリプトを Google Apps Script エディタにコピー（または clasp push）
+ * 2. config.gs の手順に従い Script Properties を設定
  * 3. 「デプロイ」→「新しいデプロイ」→ 種類: ウェブアプリ
  *    - アクセス: 全員（セキュリティは api_key で確保）
  * 4. デプロイURLを土壌センサーのHTTP POST先に設定
@@ -31,13 +31,8 @@
  * { "success": true, "inserted": 1 }
  */
 
-// ===== 定数（環境に合わせて変更） =====
-
-/** スプレッドシートID */
-const SS_ID = 'YOUR_SPREADSHEET_ID';
-
-/** 簡易認証用 API キー（推測困難な文字列を設定） */
-const API_KEY = 'YOUR_SECRET_API_KEY';
+// ===== 定数 =====
+// 機密情報・環境固有の設定は Script Properties で管理（config.gs 参照）
 
 /** soil_sensor_data シート名 */
 const SENSOR_SHEET_NAME = 'soil_sensor_data';
@@ -55,7 +50,7 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
 
     // API キー認証
-    if (body.api_key !== API_KEY) {
+    if (body.api_key !== getRequiredConfig_('SENSOR_API_KEY')) {
       return jsonResponse({ success: false, error: 'Invalid API key' }, 403);
     }
 
@@ -121,7 +116,7 @@ function doGet() {
  * soil_sensor_data シートを取得（なければヘッダー付きで作成）
  */
 function getOrCreateSensorSheet() {
-  const ss = SpreadsheetApp.openById(SS_ID);
+  const ss = SpreadsheetApp.openById(getRequiredConfig_('SPREADSHEET_ID'));
   let sheet = ss.getSheetByName(SENSOR_SHEET_NAME);
 
   if (!sheet) {

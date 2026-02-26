@@ -5,39 +5,31 @@
  * Google スプレッドシートの weather_data シートに書き込む。
  *
  * 使い方:
- * 1. このスクリプトを Google Apps Script エディタにコピー
- * 2. 下記の定数を設定
+ * 1. このスクリプトを Google Apps Script エディタにコピー（または clasp push）
+ * 2. config.gs の手順に従い Script Properties を設定
  * 3. triggers-setup.gs の setupTriggers() を実行してトリガーを登録
  */
 
-// ===== 定数（環境に合わせて変更） =====
-
-/** スプレッドシートID */
-const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID';
-
-/** 緯度（気象データ取得地点） */
-const LATITUDE = '35.6762';     // 例: 東京
-
-/** 経度（気象データ取得地点） */
-const LONGITUDE = '139.6503';   // 例: 東京
-
-/** タイムゾーン */
-const TIMEZONE = 'Asia/Tokyo';
+// ===== 定数 =====
+// 機密情報・環境固有の設定は Script Properties で管理（config.gs 参照）
 
 /** weather_data シート名 */
 const WEATHER_SHEET_NAME = 'weather_data';
 
-/**
- * Open-Meteo API キー（任意）。
- * 無料登録で 10,000 リクエスト/日に増加。GAS 共有 IP のレート制限を回避できる。
- * https://open-meteo.com/en/pricing → Sign Up (Free) でキーを取得可能。
- * 未設定の場合は空文字列のままでよい。
- */
-const OPEN_METEO_API_KEY = '';
-
 // ===== Open-Meteo API =====
 
-const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
+/** API キーがあれば customer 専用エンドポイントを使用（共有 IP 制限を回避） */
+function getOpenMeteoBase_() {
+  return getConfig_('OPEN_METEO_API_KEY')
+    ? 'https://customer-api.open-meteo.com/v1/forecast'
+    : 'https://api.open-meteo.com/v1/forecast';
+}
+
+function getOpenMeteoArchiveBase_() {
+  return getConfig_('OPEN_METEO_API_KEY')
+    ? 'https://customer-archive-api.open-meteo.com/v1/archive'
+    : 'https://archive-api.open-meteo.com/v1/archive';
+}
 
 /** 429 リトライ設定 */
 const MAX_RETRIES = 3;
@@ -123,9 +115,10 @@ function fetchPastYearWeather() {
  * @returns {string[][]} シートに追加する行データ
  */
 function fetchWeatherFromAPI(pastDays) {
+  const apiKey = getConfig_('OPEN_METEO_API_KEY');
   const params = {
-    latitude: LATITUDE,
-    longitude: LONGITUDE,
+    latitude: getConfig_('LATITUDE', '35.6762'),
+    longitude: getConfig_('LONGITUDE', '139.6503'),
     daily: [
       'temperature_2m_max',
       'temperature_2m_min',
@@ -135,20 +128,20 @@ function fetchWeatherFromAPI(pastDays) {
       'relative_humidity_2m_mean',
       'wind_speed_10m_max',
     ].join(','),
-    timezone: TIMEZONE,
+    timezone: getConfig_('TIMEZONE', 'Asia/Tokyo'),
     past_days: pastDays,
     forecast_days: 0,
   };
 
-  if (OPEN_METEO_API_KEY) {
-    params.apikey = OPEN_METEO_API_KEY;
+  if (apiKey) {
+    params.apikey = apiKey;
   }
 
   const queryString = Object.entries(params)
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
     .join('&');
 
-  const url = `${OPEN_METEO_BASE}?${queryString}`;
+  const url = `${getOpenMeteoBase_()}?${queryString}`;
   Logger.log(`Fetching: ${url}`);
 
   const json = fetchWithRetry(url);
@@ -162,11 +155,12 @@ function fetchWeatherFromAPI(pastDays) {
  * @returns {string[][]} シートに追加する行データ
  */
 function fetchWeatherFromArchiveAPI(startDate, endDate) {
-  const archiveBase = 'https://archive-api.open-meteo.com/v1/archive';
+  const apiKey = getConfig_('OPEN_METEO_API_KEY');
+  const archiveBase = getOpenMeteoArchiveBase_();
 
   const params = {
-    latitude: LATITUDE,
-    longitude: LONGITUDE,
+    latitude: getConfig_('LATITUDE', '35.6762'),
+    longitude: getConfig_('LONGITUDE', '139.6503'),
     daily: [
       'temperature_2m_max',
       'temperature_2m_min',
@@ -176,13 +170,13 @@ function fetchWeatherFromArchiveAPI(startDate, endDate) {
       'relative_humidity_2m_mean',
       'wind_speed_10m_max',
     ].join(','),
-    timezone: TIMEZONE,
+    timezone: getConfig_('TIMEZONE', 'Asia/Tokyo'),
     start_date: startDate,
     end_date: endDate,
   };
 
-  if (OPEN_METEO_API_KEY) {
-    params.apikey = OPEN_METEO_API_KEY;
+  if (apiKey) {
+    params.apikey = apiKey;
   }
 
   const queryString = Object.entries(params)
@@ -234,7 +228,7 @@ function parseDailyData(json) {
  * weather_data シートを取得（なければヘッダー付きで作成）
  */
 function getOrCreateWeatherSheet() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = SpreadsheetApp.openById(getRequiredConfig_('SPREADSHEET_ID'));
   let sheet = ss.getSheetByName(WEATHER_SHEET_NAME);
 
   if (!sheet) {

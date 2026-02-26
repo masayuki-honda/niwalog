@@ -5,7 +5,8 @@
  * Apps Script エディタから setupTriggers() を一度手動実行すること。
  *
  * 設定されるトリガー:
- * - fetchDailyWeather: 毎日 5:00-6:00 に実行
+ * - fetchDailyWeather: 毎日 9:00-10:00 に実行
+ *   （Open-Meteo の daily limit は UTC 0:00 = JST 9:00 にリセットされるため、直後に実行）
  */
 
 /**
@@ -16,15 +17,15 @@ function setupTriggers() {
   // 既存トリガーを削除
   clearAllTriggers();
 
-  // 気象データ取得トリガー（毎日 5:00-6:00）
+  // 気象データ取得トリガー（毎日 9:00-10:00 JST = UTC 0:00-1:00、daily limit リセット直後）
   ScriptApp.newTrigger('fetchDailyWeather')
     .timeBased()
     .everyDays(1)
-    .atHour(5)
+    .atHour(9)
     .create();
 
   Logger.log('Triggers set up successfully:');
-  Logger.log('- fetchDailyWeather: daily at 5:00-6:00');
+  Logger.log('- fetchDailyWeather: daily at 9:00-10:00 (after daily limit reset)');
 }
 
 /**
