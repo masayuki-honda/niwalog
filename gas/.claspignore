@@ -1,0 +1,5 @@
+# clasp が push する際に無視するファイル
+README.md
+.clasp.json
+.clasp.json.example
+.claspignore
