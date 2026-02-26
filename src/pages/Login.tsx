@@ -114,7 +114,7 @@ export function Login() {
         <div className="text-center mb-8">
           <span className="text-6xl">🌿</span>
           <h1 className="text-2xl font-bold text-garden-700 dark:text-garden-400 mt-4">
-            HomeGardenDiary
+            niwalog
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">家庭菜園日記</p>
         </div>

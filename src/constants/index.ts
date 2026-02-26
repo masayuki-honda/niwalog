@@ -1,6 +1,6 @@
 import type { ActivityType } from '@/types';
 
-export const APP_NAME = 'HomeGardenDiary';
+export const APP_NAME = 'niwalog';
 export const APP_TITLE = '家庭菜園日記';
 
 // Google API Scopes

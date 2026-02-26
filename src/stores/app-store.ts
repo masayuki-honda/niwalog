@@ -88,7 +88,7 @@ export const useAppStore = create<AppState>()(
       setError: (error) => set({ error }),
     }),
     {
-      name: 'home-garden-diary',
+      name: 'niwalog',
       partialize: (state) => ({
         googleClientId: state.googleClientId,
         spreadsheetId: state.spreadsheetId,

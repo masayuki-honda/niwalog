@@ -1,6 +1,6 @@
-# セットアップガイド
+﻿# セットアップガイド
 
-HomeGardenDiary を動かすための初期設定手順です。
+niwalog を動かすための初期設定手順です。
 
 ---
 
@@ -31,14 +31,14 @@ HomeGardenDiary を動かすための初期設定手順です。
 ### 2-1. リポジトリ作成
 
 1. [GitHub](https://github.com/) で新規リポジトリを作成
-   - リポジトリ名: `HomeGardenDiary`
+   - リポジトリ名: `niwalog`
    - Public に設定（GitHub Pages の無料利用に必要）
 
 ### 2-2. ローカルリポジトリをプッシュ
 
 ```bash
-cd HomeGardenDiary
-git remote add origin https://github.com/<ユーザー名>/HomeGardenDiary.git
+cd niwalog
+git remote add origin https://github.com/<ユーザー名>/niwalog.git
 git branch -M main
 git push -u origin main
 ```
@@ -54,7 +54,7 @@ git push -u origin main
 デプロイ完了後、以下の URL でアクセスできます：
 
 ```
-https://<ユーザー名>.github.io/HomeGardenDiary/
+https://<ユーザー名>.github.io/niwalog/
 ```
 
 > **確認方法:** リポジトリの **Actions** タブで、ワークフローの実行状況を確認できます。緑のチェックが付けばデプロイ成功です。
@@ -67,7 +67,7 @@ https://<ユーザー名>.github.io/HomeGardenDiary/
 
 1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
 2. 上部の **プロジェクト選択** → **新しいプロジェクト** をクリック
-3. プロジェクト名: `HomeGardenDiary`（任意）
+3. プロジェクト名: `niwalog`（任意）
 4. **作成** をクリック
 5. 作成したプロジェクトが選択されていることを確認
 
@@ -86,7 +86,7 @@ https://<ユーザー名>.github.io/HomeGardenDiary/
 
 1. 左メニュー → **Google Auth Platform** → **ブランディング**
 2. 以下を入力：
-   - **アプリ名**: `HomeGardenDiary`
+   - **アプリ名**: `niwalog`
    - **ユーザーサポートメール**: 自分のメールアドレス
 3. **保存**
 
@@ -116,7 +116,7 @@ https://<ユーザー名>.github.io/HomeGardenDiary/
 2. **＋ クライアントを作成** をクリック
 3. 以下を設定：
    - **アプリケーションの種類**: `ウェブアプリケーション`
-   - **名前**: `HomeGardenDiary Web`（任意）
+   - **名前**: `niwalog Web`（任意）
 4. **承認済みの JavaScript 生成元** に以下を追加：
    ```
    https://<ユーザー名>.github.io
@@ -127,11 +127,11 @@ https://<ユーザー名>.github.io/HomeGardenDiary/
    ```
 5. **承認済みのリダイレクト URI** に以下を追加：
    ```
-   https://<ユーザー名>.github.io/HomeGardenDiary/
+   https://<ユーザー名>.github.io/niwalog/
    ```
    開発時は以下も追加：
    ```
-   http://localhost:5173/HomeGardenDiary/
+   http://localhost:5173/niwalog/
    ```
 6. **作成** をクリック
 7. 表示される **クライアント ID** をコピーして控える
@@ -149,7 +149,7 @@ https://<ユーザー名>.github.io/HomeGardenDiary/
 ### 4-1. スプレッドシートを作成
 
 1. [Google Sheets](https://sheets.google.com/) で **新しいスプレッドシート** を作成
-2. スプレッドシート名: `HomeGardenDiary`（任意）
+2. スプレッドシート名: `niwalog`（任意）
 
 ### 4-2. スプレッドシート ID を控える
 
@@ -186,7 +186,7 @@ https://docs.google.com/spreadsheets/d/【ここがスプレッドシートID】
 
 ### 5-1. アプリにアクセス
 
-デプロイ済みの URL（`https://<ユーザー名>.github.io/HomeGardenDiary/`）、
+デプロイ済みの URL（`https://<ユーザー名>.github.io/niwalog/`）、
 または `npm run dev` で起動したローカル環境にアクセスします。
 
 ### 5-2. ログイン画面で Client ID を入力
@@ -197,7 +197,7 @@ https://docs.google.com/spreadsheets/d/【ここがスプレッドシートID】
 4. Google の認証画面でアカウントを選択して許可
 
 > **初回のみ:** 「このアプリは Google で確認されていません」と表示される場合は、
-> **詳細** → **HomeGardenDiary（安全ではないページ）に移動** をクリックしてください。
+> **詳細** → **niwalog（安全ではないページ）に移動** をクリックしてください。
 > （GCP で OAuth 同意画面が「テスト」ステータスのため表示されます）
 
 ### 5-3. 設定画面で初期設定
@@ -316,4 +316,4 @@ const API_KEY = '任意のキー';    // 土壌センサ受信用 API キー
 |------|------|
 | Actions が実行されない | リポジトリの Settings → Pages → Source が「GitHub Actions」になっているか確認 |
 | ビルドエラー | Actions タブでログを確認。`npm run build` がローカルで成功することを確認 |
-| 404 が表示される | `vite.config.ts` の `base` が `/HomeGardenDiary/` になっているか確認 |
+| 404 が表示される | `vite.config.ts` の `base` が `/niwalog/` になっているか確認 |

@@ -1,4 +1,4 @@
-# HomeGardenDiary 実装仕様書
+﻿# niwalog 実装仕様書
 
 **バージョン:** 3.0
 **作成日:** 2026年2月20日
@@ -36,7 +36,7 @@
 | 項目 | 設定値 |
 |------|--------|
 | ビルドツール | Vite 7 |
-| ベースパス | `/HomeGardenDiary/` |
+| ベースパス | `/niwalog/` |
 | パスエイリアス | `@` → `./src` |
 | TypeScript厳密モード | 有効 |
 
@@ -45,14 +45,14 @@
 ```typescript
 export default defineConfig({
   plugins: [react()],
-  base: '/HomeGardenDiary/',   // GitHub Pages サブパス
+  base: '/niwalog/',   // GitHub Pages サブパス
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
 })
 ```
 
-> **注意:** `base` は GitHub Pages のリポジトリ名と一致させる。ローカル開発中は `/HomeGardenDiary/` プレフィックスが付くため、`vite preview` で確認する。
+> **注意:** `base` は GitHub Pages のリポジトリ名と一致させる。ローカル開発中は `/niwalog/` プレフィックスが付くため、`vite preview` で確認する。
 
 ### 1.2 TypeScript 設定
 
@@ -321,7 +321,7 @@ interface AppState {
 
 ### 5.2 永続化対象
 
-`localStorage` のキー名: `home-garden-diary`
+`localStorage` のキー名: `niwalog`
 
 | フィールド | 永続化 | 理由 |
 |-----------|:------:|------|
@@ -421,7 +421,7 @@ interface AppState {
 | `listFiles(folderId, token)` | フォルダ内ファイル一覧（新しい順） |
 | `getFileLink(fileId, token)` | ファイルの thumbnail/download URL を取得 |
 | `deleteFile(fileId, token)` | ファイル削除 |
-| `ensureAppFolder(token)` | `HomeGardenDiary` フォルダが存在すれば ID を返し、なければ作成して返す |
+| `ensureAppFolder(token)` | `niwalog` フォルダが存在すれば ID を返し、なければ作成して返す |
 
 ---
 
@@ -495,7 +495,7 @@ export { ja } from 'date-fns/locale/ja';
 ### 8.1 主要定数
 
 ```typescript
-export const APP_NAME = 'HomeGardenDiary';
+export const APP_NAME = 'niwalog';
 export const APP_TITLE = '家庭菜園日記';
 
 export const GOOGLE_SCOPES = [
@@ -795,7 +795,7 @@ Google Drive の画像は通常の `<img src>` では CORS制限で表示でき�
 
 1. **Google Client ID** — GCP で発行した OAuth クライアントID
 2. **スプレッドシートID** — Google スプレッドシートのURL中の ID
-3. **Drive フォルダID** — `HomeGardenDiary` フォルダの ID
+3. **Drive フォルダID** — `niwalog` フォルダの ID
 
 これらは `useAppStore` に `persist` で保存されるため、再入力不要。
 
@@ -878,7 +878,7 @@ try {
 
 ```bash
 npm install
-npm run dev       # http://localhost:5173/HomeGardenDiary/
+npm run dev       # http://localhost:5173/niwalog/
 npm run build     # dist/ に静的ファイルを生成
 npm run preview   # dist/ をローカルでプレビュー
 npm run lint      # ESLint チェック
@@ -898,7 +898,7 @@ push → main
         └── actions/deploy-pages (dist/ を公開)
 ```
 
-**公開URL:** `https://{username}.github.io/HomeGardenDiary/`
+**公開URL:** `https://{username}.github.io/niwalog/`
 
 ### 15.3 SPA フォールバック
 
@@ -986,7 +986,7 @@ dist/
 - [ ] Google Cloud Console でプロジェクト作成・API有効化
 - [ ] OAuth クライアントID 発行（GitHub Pages URLを承認済みオリジンに追加）
 - [ ] スプレッドシート作成・ID確認
-- [ ] Google Drive の `HomeGardenDiary` フォルダ作成・ID確認
+- [ ] Google Drive の `niwalog` フォルダ作成・ID確認
 - [ ] Settings ページで Client ID / Spreadsheet ID / Drive Folder ID を入力
 - [ ] 「シートを初期化」ボタンで全シートのヘッダー行を作成
 

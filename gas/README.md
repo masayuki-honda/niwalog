@@ -1,6 +1,6 @@
 # GAS (Google Apps Script) スクリプト
 
-HomeGardenDiary のバックグラウンドデータ収集を担当する GAS スクリプト群です。
+niwalog のバックグラウンドデータ収集を担当する GAS スクリプト群です。
 
 ## ファイル構成
 

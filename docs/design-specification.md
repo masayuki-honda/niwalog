@@ -1,4 +1,4 @@
-# HomeGardenDiary 仕様書
+﻿# niwalog 仕様書
 
 **バージョン:** 3.0
 **作成日:** 2026年2月18日
@@ -29,7 +29,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| プロジェクト名 | HomeGardenDiary（家庭菜園日記） |
+| プロジェクト名 | niwalog（家庭菜園日記） |
 | 目的 | 家庭菜園の栽培記録・環境データを一元管理し、分析・振り返りを可能にする |
 | 対象ユーザー | 家庭菜園を行う個人および家族など |
 | 予算 | 必要に応じ、Google One 契約。それ以外の追加費用なし |
@@ -130,7 +130,7 @@
 ### 4.1 スプレッドシート構成
 
 ```
-📊 HomeGardenDiary スプレッドシート
+📊 niwalog スプレッドシート
 │
 ├── [シート] planters                    ← React SPA が読み書き
 ├── [シート] activity_logs               ← React SPA が読み書き
@@ -280,7 +280,7 @@ daily: temperature_2m_max, temperature_2m_min, temperature_2m_mean,
 
 ```
 Google ドライブ（2TB）
-└── HomeGardenDiary/
+└── niwalog/
     ├── planters/
     │   ├── p001/                    # 栽培区画ごとのフォルダ
     │   │   ├── 2026-02-18_001.jpg
@@ -307,7 +307,7 @@ Google ドライブ（2TB）
 ### 5.1 機能階層図
 
 ```
-HomeGardenDiary
+niwalog
 ├── 🔐 認証
 │   ├── Googleアカウントでログイン
 │   ├── 共有メンバー管理（settings シートで管理）
@@ -481,7 +481,7 @@ HomeGardenDiary
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  🌿 HomeGardenDiary          [🔔] [👤 ユーザー名]    │
+│  🌿 niwalog          [🔔] [👤 ユーザー名]    │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
 │  📅 2026年2月18日（水）                              │
@@ -747,7 +747,7 @@ Parameters:
 ## 12. ディレクトリ構成
 
 ```
-HomeGardenDiary/
+niwalog/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml              # GitHub Actions: ビルド→Pages公開
@@ -919,7 +919,7 @@ jobs:
 
 ### B-3. Google ドライブ フォルダ作成
 
-1. `HomeGardenDiary` フォルダを作成
+1. `niwalog` フォルダを作成
 2. 配下に `planters/`, `activities/` フォルダを作成
 3. 共有メンバーにアクセス権を付与
 
@@ -936,7 +936,7 @@ jobs:
 1. GitHub にリポジトリ作成（Public）
 2. Settings → Pages → Source: GitHub Actions
 3. コードを push → 自動ビルド・デプロイ
-4. 公開URL: `https://{username}.github.io/HomeGardenDiary/`
+4. 公開URL: `https://{username}.github.io/niwalog/`
 
 ---
 

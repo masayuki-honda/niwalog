@@ -131,8 +131,8 @@ export async function deleteFile(
 export async function ensureAppFolder(
   accessToken: string,
 ): Promise<string> {
-  // Check if HomeGardenDiary folder exists
-  const query = "name = 'HomeGardenDiary' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+  // Check if niwalog folder exists
+  const query = "name = 'niwalog' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
   const url = `${DRIVE_API_BASE}/files?q=${encodeURIComponent(query)}&fields=files(id,name)`;
 
   const res = await fetch(url, {
@@ -147,7 +147,7 @@ export async function ensureAppFolder(
   }
 
   // Create it
-  return createFolder('HomeGardenDiary', null, accessToken);
+  return createFolder('niwalog', null, accessToken);
 }
 
 /**

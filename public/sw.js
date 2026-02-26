@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'home-garden-diary-v1';
-const BASE_PATH = '/HomeGardenDiary/';
+const CACHE_NAME = 'niwalog-v1';
+const BASE_PATH = '/niwalog/';
 
 // App shell files to pre-cache
 const PRECACHE_URLS = [

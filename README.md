@@ -1,4 +1,4 @@
-# 🌿 HomeGardenDiary（家庭菜園日記）
+# 🌿 niwalog（家庭菜園日記）
 
 家庭菜園の栽培記録・環境データを一元管理し、分析・振り返りを可能にする Web アプリケーションです。
 
@@ -66,8 +66,8 @@
 ### インストール
 
 ```bash
-git clone https://github.com/<username>/HomeGardenDiary.git
-cd HomeGardenDiary
+git clone https://github.com/<username>/niwalog.git
+cd niwalog
 npm install
 ```
 
@@ -93,7 +93,7 @@ npm run preview
 
 1. **Google Cloud Platform** — プロジェクト作成、Sheets API / Drive API 有効化、OAuth 2.0 クライアント ID 作成
 2. **Google スプレッドシート** — `planters`, `activity_logs`, `weather_data`, `soil_sensor_data`, `settings`, `harvest_summary` の 6 シートを作成
-3. **Google ドライブ** — `HomeGardenDiary/planters/`, `HomeGardenDiary/activities/` フォルダを作成
+3. **Google ドライブ** — `niwalog/planters/`, `niwalog/activities/` フォルダを作成
 4. **GAS** — 気象データ取得トリガー設定、土壌センサ受信 Web App デプロイ
 5. **GitHub Pages** — Settings → Pages → Source: GitHub Actions に設定
 
@@ -103,7 +103,7 @@ npm run preview
 ## ディレクトリ構成
 
 ```
-HomeGardenDiary/
+niwalog/
 ├── .github/workflows/    # GitHub Actions デプロイ設定
 ├── docs/                 # 仕様書
 ├── gas/                  # GAS スクリプト

@@ -105,7 +105,7 @@ function doPost(e) {
 function doGet() {
   return jsonResponse({
     status: 'ok',
-    service: 'HomeGardenDiary Soil Sensor Receiver',
+    service: 'niwalog Soil Sensor Receiver',
     timestamp: new Date().toISOString(),
   });
 }
