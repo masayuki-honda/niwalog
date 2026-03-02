@@ -43,8 +43,8 @@ test.describe('認証済みナビゲーション', () => {
     await injectMockAuth(page);
     await page.goto('/niwalog/');
 
-    // ボトムナビが表示されるまで待つ（isInitializing が false になった証拠）
-    await expect(page.getByRole('link', { name: 'ホーム' })).toBeVisible({ timeout: 5000 });
+    // サイドバー（デスクトップ）またはボトムナビ（モバイル）のどちらかに存在する「プランター」リンクが表示されるまで待つ
+    await expect(page.getByRole('link', { name: 'プランター' }).first()).toBeVisible({ timeout: 5000 });
     await expect(page).not.toHaveURL(/\/login/);
   });
 
