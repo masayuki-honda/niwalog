@@ -54,6 +54,11 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Prepare dist for Lighthouse
+        run: |
+          mkdir -p lhci-dist/niwalog
+          cp -r dist/* lhci-dist/niwalog/
+
       - name: Run Lighthouse CI
         run: npx @lhci/cli autorun
         env:

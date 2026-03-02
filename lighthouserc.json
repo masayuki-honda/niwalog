@@ -1,7 +1,8 @@
 {
   "ci": {
     "collect": {
-      "staticDistDir": "./dist",
+      "staticDistDir": "./lhci-dist",
+      "url": ["http://localhost/niwalog/"],
       "numberOfRuns": 1
     },
     "assert": {

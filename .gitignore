@@ -56,3 +56,4 @@ workbox-*.js
 
 # Lighthouse CI
 .lighthouseci/
+lhci-dist/
