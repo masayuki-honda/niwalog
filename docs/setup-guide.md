@@ -14,6 +14,7 @@ niwalog を動かすための初期設定手順です。
 6. [動作確認](#6-動作確認)
 7. [GAS 設定（気象データ自動取得・土壌センサ受信）](#7-gas-設定気象データ自動取得土壌センサ受信)
 8. [トラブルシューティング](#8-トラブルシューティング)
+9. [Sentry エラー監視設定（任意）](#9-sentry-エラー監視設定任意)
 
 ---
 
@@ -317,3 +318,46 @@ const API_KEY = '任意のキー';    // 土壌センサ受信用 API キー
 | Actions が実行されない | リポジトリの Settings → Pages → Source が「GitHub Actions」になっているか確認 |
 | ビルドエラー | Actions タブでログを確認。`npm run build` がローカルで成功することを確認 |
 | 404 が表示される | `vite.config.ts` の `base` が `/niwalog/` になっているか確認 |
+
+---
+
+## 9. Sentry エラー監視設定（任意）
+
+Sentry を使うと、本番環境で発生したエラーを自動収集できます。
+設定しなくてもアプリは正常に動作します。
+
+### 9-1. Sentry アカウント・プロジェクト作成
+
+1. [Sentry](https://sentry.io/) でアカウントを作成（無料枠: 5,000 events/月）
+2. **Create Project** → プラットフォームに **React** を選択
+3. プロジェクト名: `niwalog`
+4. 作成後に表示される **DSN**（`https://xxx@xxx.ingest.sentry.io/xxx` 形式）をコピー
+
+### 9-2. GitHub Secrets に DSN を登録
+
+1. GitHub リポジトリ → **Settings** → **Secrets and variables** → **Actions**
+2. **New repository secret** をクリック
+3. 以下を設定：
+   - **Name**: `VITE_SENTRY_DSN`
+   - **Secret**: コピーした DSN
+
+### 9-3. CI ワークフローへの追加（.github/workflows/deploy.yml）
+
+ビルド時に環境変数として渡すため、`deploy.yml` の build ステップに以下を追加：
+
+```yaml
+- name: Build
+  run: npm run build
+  env:
+    VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+```
+
+### 9-4. ローカル開発での設定（任意）
+
+ローカルでも Sentry を有効にしたい場合は `.env.local` に追加：
+
+```
+VITE_SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
+```
+
+> **注意:** `.env.local` は `.gitignore` で除外済みのため、DSN がリポジトリに漏洩する心配はありません。

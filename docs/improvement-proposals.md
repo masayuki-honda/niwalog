@@ -1,7 +1,7 @@
 # niwalog 構成改善提案
 
 **作成日:** 2026年2月26日
-**最終更新日:** 2026年3月2日
+**最終更新日:** 2026年3月2日（Sentry 導入）
 
 ---
 
@@ -83,7 +83,7 @@ Google エコシステム内で統一でき、既存の Google OAuth もその�
 | 3 | **パフォーマンス監視** | Lighthouse CI を GitHub Actions に組み込み | 中 | ✅ 完了 |
 | 4 | **オフライン強化** | Service Worker を Workbox に置き換え。オフライン書き込みキュー + 同期 | 中 | ✅ 完了 |
 | 5 | E2E テスト | Playwright で主要フローの自動テスト | 低 | - |
-| 6 | エラー監視 | Sentry 無料枠（5K events/月）で本番エラー可視化 | 低 | - |
+| 6 | エラー監視 | Sentry 無料枠（5K events/月）で本番エラー可視化 | 低 | ✅ 完了 |
 | 7 | PWA 強化 | Firebase Cloud Messaging で水やりリマインダー通知 | 低 | - |
 
 ### 段階的実装計画（#1〜#4 を採用）
@@ -146,6 +146,24 @@ PR ごとに以下のスコアを自動計測し、閾値を下回ったら CI �
 - Google API → `NetworkOnly`、Drive 画像 → `StaleWhileRevalidate`（7日間/200件上限）、天気 API → `NetworkFirst`（6時間/30件上限）
 - Service Worker の更新通知 UI（`ReloadPrompt` コンポーネント: 「新しいバージョンがあります」プロンプト）
 - 1時間ごとの自動更新チェック
+
+#### Phase D: エラー監視（Sentry） ✅ 実装済み
+
+**Sentry とは:**
+アプリケーションの実行時エラーを自動収集・可視化するエラー監視サービス。
+本番環境で JavaScript の例外が発生した際に以下を自動記録する：
+
+- エラーメッセージとスタックトレース
+- 発生 URL・ブラウザ・OS
+- エラー発生前のユーザー操作（パンくず）
+- 影響ユーザー数
+
+**導入内容:**
+- `@sentry/react` を dependencies に追加
+- `src/main.tsx` で `Sentry.init()` を初期化（`VITE_SENTRY_DSN` 環境変数が設定されている場合のみ有効化）
+- `Sentry.ErrorBoundary` でアプリ全体をラップし、未捕捉エラーを日本語フォールバック UI で表示
+- Browser Tracing + Session Replay インテグレーションを設定
+- **DSN の設定方法:** Sentry プロジェクトを作成し、DSN を GitHub Secrets の `VITE_SENTRY_DSN` に登録する（[セットアップガイド 9章](./setup-guide.md) 参照）
 
 ---
 

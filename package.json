@@ -19,6 +19,7 @@
     "gas:login": "clasp login"
   },
   "dependencies": {
+    "@sentry/react": "^10.40.0",
     "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
