@@ -1,6 +1,7 @@
 # niwalog 構成改善提案
 
 **作成日:** 2026年2月26日
+**最終更新日:** 2026年3月2日
 
 ---
 
@@ -75,19 +76,19 @@ Google エコシステム内で統一でき、既存の Google OAuth もその�
 
 ### 改善項目一覧
 
-| # | 改善ポイント | 内容 | 優先度 |
-|---|---|---|---|
-| 1 | **テスト追加** | Vitest + React Testing Library。リファクタリングの安全網 | 高 |
-| 2 | **CI/CD 強化** | lint / typecheck / test / build を PR 時に自動実行 | 高 |
-| 3 | **パフォーマンス監視** | Lighthouse CI を GitHub Actions に組み込み | 中 |
-| 4 | **オフライン強化** | Service Worker を Workbox に置き換え。オフライン書き込みキュー + 同期 | 中 |
-| 5 | E2E テスト | Playwright で主要フローの自動テスト | 低 |
-| 6 | エラー監視 | Sentry 無料枠（5K events/月）で本番エラー可視化 | 低 |
-| 7 | PWA 強化 | Firebase Cloud Messaging で水やりリマインダー通知 | 低 |
+| # | 改善ポイント | 内容 | 優先度 | 状態 |
+|---|---|---|---|---|
+| 1 | **テスト追加** | Vitest + React Testing Library。リファクタリングの安全網 | 高 | ✅ 完了 |
+| 2 | **CI/CD 強化** | lint / typecheck / test / build を PR 時に自動実行 | 高 | ✅ 完了 |
+| 3 | **パフォーマンス監視** | Lighthouse CI を GitHub Actions に組み込み | 中 | ✅ 完了 |
+| 4 | **オフライン強化** | Service Worker を Workbox に置き換え。オフライン書き込みキュー + 同期 | 中 | ✅ 完了 |
+| 5 | E2E テスト | Playwright で主要フローの自動テスト | 低 | - |
+| 6 | エラー監視 | Sentry 無料枠（5K events/月）で本番エラー可視化 | 低 | - |
+| 7 | PWA 強化 | Firebase Cloud Messaging で水やりリマインダー通知 | 低 | - |
 
 ### 段階的実装計画（#1〜#4 を採用）
 
-#### Phase A: テスト基盤 + CI/CD 強化
+#### Phase A: テスト基盤 + CI/CD 強化 ✅ 実装済み
 
 **目的:** 以降の改善を安全に進めるための基盤を作る
 
