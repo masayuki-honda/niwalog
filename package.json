@@ -12,6 +12,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lighthouse": "lhci autorun",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "preview": "vite preview",
     "gas:push": "cd gas && clasp push",
     "gas:pull": "cd gas && clasp pull",
@@ -56,6 +58,7 @@
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "@playwright/test": "^1.58.2"
   }
 }

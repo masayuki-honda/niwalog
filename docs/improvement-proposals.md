@@ -1,7 +1,7 @@
 # niwalog 構成改善提案
 
 **作成日:** 2026年2月26日
-**最終更新日:** 2026年3月2日（Sentry 導入）
+**最終更新日:** 2026年3月2日（E2E テスト導入）
 
 ---
 
@@ -82,7 +82,7 @@ Google エコシステム内で統一でき、既存の Google OAuth もその�
 | 2 | **CI/CD 強化** | lint / typecheck / test / build を PR 時に自動実行 | 高 | ✅ 完了 |
 | 3 | **パフォーマンス監視** | Lighthouse CI を GitHub Actions に組み込み | 中 | ✅ 完了 |
 | 4 | **オフライン強化** | Service Worker を Workbox に置き換え。オフライン書き込みキュー + 同期 | 中 | ✅ 完了 |
-| 5 | E2E テスト | Playwright で主要フローの自動テスト | 低 | - |
+| 5 | E2E テスト | Playwright で主要フローの自動テスト | 低 | ✅ 完了 |
 | 6 | エラー監視 | Sentry 無料枠（5K events/月）で本番エラー可視化 | 低 | ✅ 完了 |
 | 7 | PWA 強化 | Firebase Cloud Messaging で水やりリマインダー通知 | 低 | - |
 
@@ -146,6 +146,26 @@ PR ごとに以下のスコアを自動計測し、閾値を下回ったら CI �
 - Google API → `NetworkOnly`、Drive 画像 → `StaleWhileRevalidate`（7日間/200件上限）、天気 API → `NetworkFirst`（6時間/30件上限）
 - Service Worker の更新通知 UI（`ReloadPrompt` コンポーネント: 「新しいバージョンがあります」プロンプト）
 - 1時間ごとの自動更新チェック
+
+#### Phase E: E2E テスト（Playwright） ✅ 実装済み
+
+**テスト対象:**
+- ログインページ（未認証リダイレクト・UI 要素・バリデーション）
+- 認証済みナビゲーション（localStorage モックユーザー注入によるフロー検証）
+
+**導入内容:**
+- `@playwright/test` を devDependencies に追加
+- `playwright.config.ts`: Chromium 限定・`vite preview` をテストサーバーとして使用
+- `e2e/login.spec.ts`: ログインページ 6 テスト
+- `e2e/navigation.spec.ts`: ナビゲーション 6 テスト
+- CI ワークフロー（`ci.yml`）に `e2e` ジョブを追加（`ci` ジョブ完了後に実行）
+- テスト失敗時に Playwright レポートを GitHub Actions Artifact として保存
+
+**モック戦略:**
+- Google OAuth は外部サービスのため自動化不可
+- `page.addInitScript()` で localStorage にモックユーザーを注入
+- `googleClientId: ''` にすることで Google API 呼び出しをスキップさせる
+- `spreadsheetId: ''` にすることで Sheets API 呼び出しを条件分岐でスキップさせる
 
 #### Phase D: エラー監視（Sentry） ✅ 実装済み
 

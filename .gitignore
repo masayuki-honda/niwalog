@@ -57,3 +57,7 @@ workbox-*.js
 # Lighthouse CI
 .lighthouseci/
 lhci-dist/
+
+# Playwright E2E
+playwright-report/
+test-results/
